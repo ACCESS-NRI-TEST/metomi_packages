@@ -1,0 +1,30 @@
+package:
+    name: shumlib
+    version: "{{ environ["VERSION"] }}"
+
+source:
+    svn_url: https://code.metoffice.gov.uk/svn/utils/shumlib/trunk
+    svn_rev: {{ environ["REVISION"] }}
+    svn_username: {{ environ["SVN_USERNAME"] }}
+    svn_password: {{ environ["SVN_PASSWORD"] }}
+
+build:
+    number: 0
+    script: |
+        make -f make/meto-x86-gfortran-gcc.mk all_libs check LIBDIR_OUT=$PWD/out
+        ls $PWD/out/*
+        mkdir -p $PREFIX/{include,lib}
+        cp -v $PWD/out/include/?_shum_*.{h,mod} $PREFIX/include
+        cp -v $PWD/out/include/shumlib_version.h $PREFIX/include
+        cp -v $PWD/out/lib/libshum_*.{a,so} $PREFIX/lib
+
+requirements:
+    build:
+        - {{ compiler('c') }}
+        - {{ compiler('fortran') }}
+
+about:
+    home: https://code.metoffice.gov.uk/trac/utils/shumlib
+    license: BSD 3-Clause
+    license_file: doc/README.rst
+    summary: Unified Model Shared Libraries
