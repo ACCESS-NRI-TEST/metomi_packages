@@ -1,6 +1,6 @@
 package:
     name: shumlib
-    version: "{{ environ["VERSION"] }}"
+    version: '{{ environ["VERSION"] }}'
 
 source:
     svn_url: https://code.metoffice.gov.uk/svn/utils/shumlib/trunk

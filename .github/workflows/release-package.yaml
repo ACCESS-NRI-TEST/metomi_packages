@@ -34,13 +34,6 @@ jobs:
             uses: actions/checkout@v4
             with:
                 fetch-depth: 0 
-        
-          - name: Create tag
-            shell: bash -el {0}
-            run: |
-                # Create tag in the format <package_name>-<version>
-                git tag ${{env.TAG_NAME}}
-                git push origin tag ${{env.TAG_NAME}}
 
           - name: Setup conda build environment
             uses: conda-incubator/setup-miniconda@a4260408e20b96e80095f42ff7f1a15b27dd94ca # v3.0.4
@@ -62,12 +55,19 @@ jobs:
             run: |
                 path=$(find ${{env.BUILD_FOLDER}} -type f -name *.tar.bz2)
                 echo "PACKAGE_PATH=$path" >> $GITHUB_ENV
+        
+          - name: Create tag
+            shell: bash -el {0}
+            run: |
+                # Create tag in the format <package_name>-<version>
+                git tag ${{env.TAG_NAME}}
+                git push origin tag ${{env.TAG_NAME}}
 
         #   - name: Upload conda package to Anaconda.org
         #     shell: bash -el {0}
         #     run: |
         #         anaconda -t ${{ secrets.ANACONDA_TOKEN }} upload --user ${{ secrets.ANACONDA_USER_NAME }} ${{env.PACKAGE_PATH}}        
-
+        
           - name: Create Release
             uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 #v2.0.8
             with:
