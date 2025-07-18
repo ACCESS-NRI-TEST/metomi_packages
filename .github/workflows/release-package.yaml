@@ -14,7 +14,10 @@ on:
                 description: 'SVN revision associated with the package version to release'
                 type: string
                 required: true
-run-name: Release ${{ inputs.package_name }} ${{ inputs.version }}
+run-name: "Release ${{ inputs.package_name }} ${{ inputs.version }}"
+env:
+    TAG_NAME: ${{ inputs.package_name }}-${{ inputs.version }}
+
 
 jobs:
     create-and-upload-conda-package:
@@ -25,59 +28,49 @@ jobs:
             REVISION: ${{inputs.revision}} # Needed as an env variable for the conda recipe
             SVN_USERNAME: ${{secrets.MOSRS_USERNAME}} # Needed as an env variable for the conda recipe
             SVN_PASSWORD: ${{secrets.MOSRS_PASSWORD}} # Needed as an env variable for the conda recipe
-        outputs:
-            package-paths: ${{ steps.build-upload.outputs.paths }}
+        permissions:
+            contents: write
         steps:
           - name: Checkout source
-            uses: actions/checkout@v4
-
+            uses: actions/checkout@v4  
           - name: Set up micromamba
             uses: mamba-org/setup-micromamba@b09ef9b599704322748535812ca03efb2625677b #v2.0.5
             with:
-              environment-file: env-build.yml
-        
-          # Newer ubuntu GitHub runners don't support svn anymore, so we have to install
-          # it manually. (reference --> https://github.com/actions/runner-images/issues/11219#issuecomment-2550505933)
+                environment-file: env-build.yml
+      
+        # Newer ubuntu GitHub runners don't support svn anymore, so we have to install
+        # it manually. (reference --> https://github.com/actions/runner-images/issues/11219#issuecomment-2550505933)
           - name: Install svn
-            run: sudo apt-get update && sudo apt-get install -y subversion
+            run: | 
+                sudo apt-get update 
+                sudo apt-get install -y subversion
+                # Check installation
+                svn --version  
 
           - name: Build and upload conda package
             id: build-upload
             uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
             with:
-              meta_yaml_dir: packages/${{ inputs.package_name }}
-              user: ${{ secrets.ANACONDA_USERNAME }}
-              token: ${{ secrets.ANACONDA_TOKEN }}
-              conda_build_args: --channel accessnri --channel conda-forge --channel nodefaults
-    
-    create-release:
-        name: Create tag and GitHub release
-        needs: create-and-upload-conda-package
-        runs-on: ubuntu-latest
-        env:
-          TAG_NAME: ${{inputs.package_name}}-${{inputs.version}}
-        permissions:
-          contents: write
-        steps:
-          - name: Checkout
-            uses: actions/checkout@v4
-        
+                meta_yaml_dir: packages/${{ inputs.package_name }}
+                user: ${{ secrets.ANACONDA_USERNAME }}
+                token: ${{ secrets.ANACONDA_TOKEN }}
+                conda_build_args: --channel accessnri --channel conda-forge --channel nodefaults
+      
           - name: Create tag
             run: |
-              # Create tag in the format <package_name>-<version>
-              git tag ${{env.TAG_NAME}}
-              git push origin tag ${{env.TAG_NAME}}
-        
+                # Create tag in the format <package_name>-<version>
+                git tag ${{env.TAG_NAME}}
+                git push origin tag ${{env.TAG_NAME}}
+      
           - name: Get package paths
             id: get-paths
             run: |
-              # Get a newline-separated string of package paths to pass
-              # to the create release step
-              space_separated_paths='${{needs.create-and-upload-conda-package.outputs.package-paths}}'
-              newline_separated_paths=$(sed 's/ /\\n/' <<< $space_separated_paths)
-              echo "paths=$newline_separated_paths" >> $GITHUB_OUTPUT
-              
-
+                # Get a newline-separated string of package paths to pass
+                # to the create release step
+                space_separated_paths='${{steps.build-upload.outputs.paths}}'
+                newline_separated_paths=$(sed 's/ /\\n/' <<< $space_separated_paths)
+                echo "paths=$newline_separated_paths" >> $GITHUB_OUTPUT
+                
           - name: Create Release
             uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 #v2.3.2
             with:
@@ -86,4 +79,24 @@ jobs:
                 generate_release_notes: false
                 fail_on_unmatched_files: true
                 files: ${{steps.get-paths.outputs.paths}}
+        
+    cleanup-tag-on-failure:
+        name: Cleanup tag
+        runs-on: ubuntu-latest
+        needs: create-and-upload-conda-package
+        # Run this job if any of the previous jobs failed (and don't skip if any of the needed jobs is skipped)
+        if: ${{ ( always() && failure() ) || cancelled() }}
+        permissions:
+            contents: write
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v4
+            with:
+                fetch-tags: true
+
+          - name: Delete tag
+            run: |
+                git push origin :${{ env.TAG_NAME }}
+                echo "A job in the current workflow failed. Tag '${{ env.TAG_NAME }}' was deleted."
+
 
