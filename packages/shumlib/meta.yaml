@@ -10,7 +10,7 @@ source:
 
 build:
     number: 0
-    script: bash build.sh
+    # Conda automatically runs the build.sh script
 
 requirements:
     build:

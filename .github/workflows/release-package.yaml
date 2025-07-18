@@ -17,64 +17,68 @@ on:
 run-name: Release ${{ inputs.package_name }} ${{ inputs.version }}
 
 jobs:
-    release-conda-package:
+    create-and-upload-conda-package:
         name: Build with conda and release
         runs-on: ubuntu-latest
         env:
-            BUILD_FOLDER: ${{github.workspace}}/build
-            TAG_NAME: ${{inputs.package_name}}-${{inputs.version}}
             VERSION: ${{inputs.version}} # Needed as an env variable for the conda recipe
             REVISION: ${{inputs.revision}} # Needed as an env variable for the conda recipe
             SVN_USERNAME: ${{secrets.MOSRS_USERNAME}} # Needed as an env variable for the conda recipe
             SVN_PASSWORD: ${{secrets.MOSRS_PASSWORD}} # Needed as an env variable for the conda recipe
-        permissions:
-            contents: write
+        outputs:
+            package-paths: ${{ steps.build-upload.outputs.paths }}
         steps:
           - name: Checkout source
             uses: actions/checkout@v4
-            with:
-                fetch-depth: 0 
 
-          - name: Setup conda build environment
-            uses: conda-incubator/setup-miniconda@a4260408e20b96e80095f42ff7f1a15b27dd94ca # v3.0.4
+          - name: Set up micromamba
+            uses: mamba-org/setup-micromamba@b09ef9b599704322748535812ca03efb2625677b #v2.0.5
             with:
-                miniconda-version: "latest"
-                python-version: ${{ vars.PY_VERSION }}
-                environment-file: env-build.yml
-                auto-activate-base: false
-                auto-update-conda: false
-                show-channel-urls: true
+              environment-file: env-build.yml
       
-          - name: Build conda package
-            shell: bash -el {0}
-            run: |
-                conda build packages/${{inputs.package_name}} --no-anaconda-upload --output-folder=${{env.BUILD_FOLDER}}
-        
-          - name: Get package path
-            shell: bash -el {0}
-            run: |
-                path=$(find ${{env.BUILD_FOLDER}} -type f -name *.tar.bz2)
-                echo "PACKAGE_PATH=$path" >> $GITHUB_ENV
+          - name: Build and upload conda package
+            id: build-upload
+            uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
+            with:
+              meta_yaml_dir: packages/${{ inputs.package_name }}
+              user: ${{ secrets.ANACONDA_USERNAME }}
+              token: ${{ secrets.ANACONDA_TOKEN }}
+              conda_build_args: --channel accessnri --channel conda-forge --channel nodefaults
+    
+    create-release:
+        name: Create tag and GitHub release
+        needs: create-and-upload-conda-package
+        runs-on: ubuntu-latest
+        env:
+          TAG_NAME: ${{inputs.package_name}}-${{inputs.version}}
+        permissions:
+          contents: write
+        steps:
+          - name: Checkout
+            uses: actions/checkout@v4
         
           - name: Create tag
-            shell: bash -el {0}
             run: |
-                # Create tag in the format <package_name>-<version>
-                git tag ${{env.TAG_NAME}}
-                git push origin tag ${{env.TAG_NAME}}
-
-        #   - name: Upload conda package to Anaconda.org
-        #     shell: bash -el {0}
-        #     run: |
-        #         anaconda -t ${{ secrets.ANACONDA_TOKEN }} upload --user ${{ secrets.ANACONDA_USER_NAME }} ${{env.PACKAGE_PATH}}        
+              # Create tag in the format <package_name>-<version>
+              git tag ${{env.TAG_NAME}}
+              git push origin tag ${{env.TAG_NAME}}
         
+          - name: Get package paths
+            id: get-paths
+            run: |
+              # Get a newline-separated string of package paths to pass
+              # to the create release step
+              space_separated_paths='${{needs.create-and-upload-conda-package.outputs.package-paths}}'
+              newline_separated_paths=$(sed 's/ /\\n/' <<< $space_separated_paths)
+              echo "paths=$newline_separated_paths" >> $GITHUB_OUTPUT
+              
+
           - name: Create Release
-            uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 #v2.0.8
+            uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 #v2.3.2
             with:
                 tag_name: ${{env.TAG_NAME}}
-                name: ${{inputs.package_name}} ${{env.VERSION}}
+                name: ${{inputs.package_name}} ${{inputs.version}}
                 generate_release_notes: false
                 fail_on_unmatched_files: true
-                files: |
-                    ${{env.PACKAGE_PATH}}
+                files: ${{steps.get-paths.outputs.paths}}
 
