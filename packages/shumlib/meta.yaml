@@ -10,26 +10,14 @@ source:
 
 build:
     number: 0
-    script: |
-        # Copy makefile to temporary file to safely modify it
-        makefile=tmp_makefile
-        trap "rm -f $makefile" EXIT
-        cp make/meto-x86-gfortran-gcc.mk $makefile
-        # Change the executables in the makefile to use the ones downloaded by conda (referenced in the env variables)
-        # Fortran compiler
-        sed -i "s|^FC=.*|FC=$FC|" $makefile
-        # Build the library
-        make -f $makefile all_libs check LIBDIR_OUT=$PWD/out
-        ls $PWD/out/*
-        mkdir -p $PREFIX/{include,lib}
-        cp -v $PWD/out/include/?_shum_*.{h,mod} $PREFIX/include
-        cp -v $PWD/out/include/shumlib_version.h $PREFIX/include
-        cp -v $PWD/out/lib/libshum_*.{a,so} $PREFIX/lib
+    script: bash build.sh
 
 requirements:
     build:
         - {{ compiler('c') }}
         - {{ compiler('fortran') }}
+        - make
+        - binutils
 
 about:
     home: https://code.metoffice.gov.uk/trac/utils/shumlib
