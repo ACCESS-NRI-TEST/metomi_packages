@@ -1,0 +1,35 @@
+package:
+  name: um_packing
+  version: '{{ environ["VERSION"] }}'
+
+source:
+  svn_url: https://code.metoffice.gov.uk/svn/um/mule/trunk
+  svn_rev: {{ environ["REVISION"] }}
+  svn_username: {{ environ["SVN_USERNAME"] }}
+  svn_password: {{ environ["SVN_PASSWORD"] }}
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+  host:
+    - python
+    - pip
+    - numpy
+    - shumlib
+  run:
+    - python
+    - numpy
+    - shumlib
+
+test:
+  imports:
+    - um_packing
+
+about:
+  home: https://code.metoffice.gov.uk/trac/um/wiki/working_practices_mule
+  license: BSD
+  license_file: um_packing/LICENCE.txt
+  summary: Python extension from the SHUMlib packing library

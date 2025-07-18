@@ -43,7 +43,7 @@ source:
 #         - mule-version
 
 # about:
-#     home: https://code.metoffice.gov.uk/trac/um
+#     home: https://code.metoffice.gov.uk/doc/ancil/ants/latest/index.html
 #     license: BSD
 #     license_file: mule/LICENCE.txt
 #     summary: Unified Model Fields File interface

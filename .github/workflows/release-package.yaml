@@ -45,7 +45,7 @@ jobs:
                 sudo apt-get update 
                 sudo apt-get install -y subversion
                 # Check installation
-                svn --version  
+                svn --version
 
           - name: Build and upload conda package
             id: build-upload
@@ -96,7 +96,8 @@ jobs:
 
           - name: Delete tag
             run: |
-                git push origin :${{ env.TAG_NAME }}
-                echo "A job in the current workflow failed. Tag '${{ env.TAG_NAME }}' was deleted."
+                if git rev-parse '${{ env.TAG_NAME }}' &>/dev/null; then
+                    git push origin :${{ env.TAG_NAME }}
+                    echo "A job in the current workflow failed. Tag '${{ env.TAG_NAME }}' was deleted."
 
 

@@ -1,0 +1,38 @@
+package:
+  name: um_spiral_search
+  version: "{{ environ["VERSION"] }}"
+
+source:
+  svn_url: https://code.metoffice.gov.uk/svn/um/mule/trunk
+  svn_rev: {{ environ["REVISION"] }}
+  svn_username: {{ environ["SVN_USERNAME"] }}
+  svn_password: {{ environ["SVN_PASSWORD"] }}
+
+build:
+  number: 0
+  script: |
+    cd um_spiral_search
+    python -m pip install --no-deps --ignore-installed .
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+  host:
+    - python
+    - numpy
+    - pip
+    - shumlib
+  run:
+    - python
+    - numpy
+    - shumlib
+
+test:
+  imports:
+    - um_spiral_search
+
+about:
+  home: https://code.metoffice.gov.uk/trac/um/wiki/working_practices_mule
+  license: BSD
+  license_file: um_spiral_search/LICENCE.txt
+  summary: Python extension from the SHUMlib spiral search library

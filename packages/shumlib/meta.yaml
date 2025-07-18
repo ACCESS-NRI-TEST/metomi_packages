@@ -1,26 +1,26 @@
 package:
-    name: shumlib
-    version: '{{ environ["VERSION"] }}'
+  name: shumlib
+  version: '{{ environ["VERSION"] }}'
 
 source:
-    svn_url: https://code.metoffice.gov.uk/svn/utils/shumlib/trunk
-    svn_rev: {{ environ["REVISION"] }}
-    svn_username: {{ environ["SVN_USERNAME"] }}
-    svn_password: {{ environ["SVN_PASSWORD"] }}
+  svn_url: https://code.metoffice.gov.uk/svn/utils/shumlib/trunk
+  svn_rev: {{ environ["REVISION"] }}
+  svn_username: {{ environ["SVN_USERNAME"] }}
+  svn_password: {{ environ["SVN_PASSWORD"] }}
 
 build:
-    number: 0
-    # Conda automatically runs the build.sh script
+  number: 0
+  # Conda automatically runs the build.sh script
 
 requirements:
-    build:
-        - {{ compiler('c') }}
-        - {{ compiler('fortran') }}
-        - make
-        - binutils
+  build:
+    - {{ compiler('c') }}
+    - {{ compiler('fortran') }}
+    - make
+    - binutils
 
 about:
-    home: https://code.metoffice.gov.uk/trac/utils/shumlib
-    license: BSD
-    license_file: doc/README.rst
-    summary: Unified Model Shared Libraries
+  home: https://code.metoffice.gov.uk/trac/utils/shumlib
+  license: BSD
+  license_file: doc/README.rst
+  summary: Unified Model Shared Libraries
