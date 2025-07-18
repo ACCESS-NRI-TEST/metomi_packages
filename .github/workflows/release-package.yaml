@@ -35,7 +35,12 @@ jobs:
             uses: mamba-org/setup-micromamba@b09ef9b599704322748535812ca03efb2625677b #v2.0.5
             with:
               environment-file: env-build.yml
-      
+        
+          # Newer ubuntu GitHub runners don't support svn anymore, so we have to install
+          # it manually. (reference --> https://github.com/actions/runner-images/issues/11219#issuecomment-2550505933)
+          - name: Install svn
+            run: sudo apt-get update && sudo apt-get install -y subversion
+
           - name: Build and upload conda package
             id: build-upload
             uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
