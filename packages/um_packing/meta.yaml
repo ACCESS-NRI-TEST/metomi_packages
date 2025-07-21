@@ -16,12 +16,13 @@ requirements:
     - {{ compiler('c') }}
   host:
     - python
+    - numpy <2 # [py<313]
+    - numpy >=2 # [py>=313]
     - pip
-    - numpy
     - shumlib
+    - setuptools
   run:
     - python
-    - numpy
     - shumlib
 
 test:
