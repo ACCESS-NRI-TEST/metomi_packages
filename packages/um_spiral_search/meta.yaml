@@ -10,9 +10,6 @@ source:
 
 build:
   number: 0
-  script: |
-    cd um_spiral_search
-    python -m pip install --no-deps --ignore-installed .
 
 requirements:
   build:
