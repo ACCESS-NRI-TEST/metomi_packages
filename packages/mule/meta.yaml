@@ -35,4 +35,4 @@ about:
   home: https://code.metoffice.gov.uk/trac/um/wiki/working_practices_mule
   license: BSD
   license_file: mule/LICENCE.txt
-  summary: Python extension from the SHUMlib packing library
+  summary: Unified Model Fields File interface
