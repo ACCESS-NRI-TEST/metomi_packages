@@ -1,6 +1,6 @@
 package:
   name: um_spiral_search
-  version: "{{ environ["VERSION"] }}"
+  version: '{{ environ["VERSION"] }}'
 
 source:
   svn_url: https://code.metoffice.gov.uk/svn/um/mule/trunk
@@ -16,12 +16,13 @@ requirements:
     - {{ compiler('c') }}
   host:
     - python
-    - numpy
+    - numpy <2 # [py<313]
+    - numpy >=2 # [py>=313]
     - pip
     - shumlib
+    - setuptools
   run:
     - python
-    - numpy
     - shumlib
 
 test:
