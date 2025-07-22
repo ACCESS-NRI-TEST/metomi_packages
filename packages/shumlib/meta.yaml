@@ -10,7 +10,7 @@ source:
 
 build:
   number: 0
-  # Conda automatically runs the build.sh script
+  skip: true # [not linux-64]
 
 requirements:
   build:
