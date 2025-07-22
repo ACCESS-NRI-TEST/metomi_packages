@@ -1,142 +1,38 @@
-# export VERSION=2022.11.1
-# export REVISION=126922
-# export SVN_USERNAME=davidemarchegiani
-# export SVN_PASSWORD=
+{% set version = environ.get("VERSION") %}
 
 package:
   name: mule
-  version: '{{ environ["VERSION"] }}' # 2022.11.1
+  version: '{{ version }}'
 
 source:
   svn_url: https://code.metoffice.gov.uk/svn/um/mule/trunk
-  svn_rev: {{ environ["REVISION"] }} # 126922
+  svn_rev: {{ environ["REVISION"] }}
   svn_username: {{ environ["SVN_USERNAME"] }}
   svn_password: {{ environ["SVN_PASSWORD"] }}
 
 build:
   number: 0
-  # script: install-mule.sh
-  script: |
-    pushd ${SRC_DIR}/mule
-    ${PYTHON} -m pip install . -vv --no-deps --ignore-installed
-    popd
 
 requirements:
   host:
     - python
+    # - numpy <2 # [py<313]
+    # - numpy >=2 # [py>=313]
     - pip
+    - setuptools
   run:
     - python
     - numpy
     - six
+    - um_packing =={{version}} # [linux]
     - mo_pack # [not linux]
-    - {{ pin_subpackage('um_packing', exact=True) }} # [linux]
 
 test:
   imports:
     - mule
 
 about:
-  home: https://code.metoffice.gov.uk/doc/um/mule/2023.08.1/
+  home: https://code.metoffice.gov.uk/trac/um/wiki/working_practices_mule
   license: BSD
   license_file: mule/LICENCE.txt
-  summary: Unified Model Fields File interface
-
-outputs:
-  - name: um_packing # [linux]
-    build:
-      number: 0
-      # script: install-um_packing.sh
-      script: |
-        pushd ${SRC_DIR}/um_packing
-        ${PYTHON} -m pip install . -vv --no-deps --ignore-installed
-        popd
-    requirements:
-      build:
-        - {{ compiler('c') }}
-      host:
-        - python
-        - pip
-        - numpy
-        - shumlib
-      run:
-        - python
-        - numpy
-        - shumlib
-    test:
-      imports:
-        - um_packing
-    about:
-      home: https://code.metoffice.gov.uk/trac/um/wiki/working_practices_mule
-      license: BSD
-      license_file: um_packing/LICENCE.txt
-      summary: Python extension from the SHUMlib packing library
-  
-  # - name: um_spiral_search # [linux]
-
-  #   build:
-  #     number: 0
-  #     script: install-um_spiral_search.sh
-
-  #   requirements:
-  #     build:
-  #       - {{ compiler('c') }}
-  #     host:
-  #       - python
-  #       - numpy
-  #       - pip
-  #       - shumlib
-  #     run:
-  #       - python
-  #       - numpy
-  #       - shumlib
-
-  #   test:
-  #     imports:
-  #       - um_spiral_search
-
-  #   about:
-  #     home: https://code.metoffice.gov.uk/trac/um/wiki/working_practices_mule
-  #     license: BSD
-  #     license_file: um_spiral_search/LICENCE.txt
-  #     summary: Python extension from the SHUMlib spiral search library
-  
-  # - name: mule-utils
-
-  #   build:
-  #     number: 0
-  #     script: |
-  #       cd um_utils
-  #       python -m pip install --no-deps --ignore-installed .
-
-  #   requirements:
-  #     host:
-  #       - python
-  #       - pip
-  #     run:
-  #       - python
-  #       - {{ pin_subpackage('mule', max_pin="x.x.x") }}
-  #       - numpy
-  #       - six
-
-  #   test:
-  #     imports:
-  #       - um_utils
-  #     commands:
-  #       - mule-cumf --help
-  #       - mule-cutout --help
-  #       - mule-fixframe --help
-  #       - mule-pumf --help
-  #       - mule-select --help
-  #       - mule-summary --help
-  #       - mule-trim --help
-  #       - mule-version --help
-  #       - mule-unpack --help
-  #       - mule-convpp --help
-  #       - mule-editmask --help
-
-  #   about:
-  #     home: https://code.metoffice.gov.uk/doc/um/mule_utils/2023.08.1/
-  #     license: BSD
-  #     license_file: um_utils/LICENCE.txt
-  #     summary: Utility tools for working with UM files
+  summary: Python extension from the SHUMlib packing library

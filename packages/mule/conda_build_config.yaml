@@ -1,0 +1,9 @@
+python:
+  - 3.10
+  - 3.11
+  - 3.12
+  - 3.13
+
+# At runtime, pin numpy major version used for the build
+pin_run_as_build:
+  numpy: x
