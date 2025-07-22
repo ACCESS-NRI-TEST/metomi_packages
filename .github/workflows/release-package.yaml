@@ -46,6 +46,12 @@ jobs:
                 sudo apt-get install -y subversion
                 # Check installation
                 svn --version
+        
+          - name: Create tag
+            run: |
+                # Create tag in the format <package_name>-<version>
+                git tag ${{env.TAG_NAME}}
+                git push origin tag ${{env.TAG_NAME}}
 
           - name: Build and upload conda package
             id: build-upload
@@ -56,20 +62,14 @@ jobs:
                 token: ${{ secrets.ANACONDA_TOKEN }}
                 conda_build_args: --channel accessnri --channel conda-forge --channel nodefaults
       
-          - name: Create tag
-            run: |
-                # Create tag in the format <package_name>-<version>
-                git tag ${{env.TAG_NAME}}
-                git push origin tag ${{env.TAG_NAME}}
-      
-          - name: Get package paths
-            id: get-paths
-            run: |
-                # Get a newline-separated string of package paths to pass
-                # to the create release step
-                space_separated_paths='${{steps.build-upload.outputs.paths}}'
-                newline_separated_paths=$(sed 's/ /\\n/' <<< $space_separated_paths)
-                echo "paths=$newline_separated_paths" >> $GITHUB_OUTPUT
+        #   - name: Get package paths
+        #     id: get-paths
+        #     run: |
+        #         # Get a newline-separated string of package paths to pass
+        #         # to the create release step
+        #         space_separated_paths='${{steps.build-upload.outputs.paths}}'
+        #         newline_separated_paths=$(sed 's/ /\\n/g' <<< $space_separated_paths)
+        #         echo "paths=$newline_separated_paths" >> $GITHUB_OUTPUT
                 
           - name: Create Release
             uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 #v2.3.2
@@ -78,7 +78,8 @@ jobs:
                 name: ${{inputs.package_name}} ${{inputs.version}}
                 generate_release_notes: false
                 fail_on_unmatched_files: true
-                files: ${{steps.get-paths.outputs.paths}}
+                files: |-
+                    ${{steps.build-upload.outputs.paths}}
         
     cleanup-tag-on-failure:
         name: Cleanup tag
@@ -99,5 +100,6 @@ jobs:
                 if git rev-parse '${{ env.TAG_NAME }}' &>/dev/null; then
                     git push origin :${{ env.TAG_NAME }}
                     echo "A job in the current workflow failed. Tag '${{ env.TAG_NAME }}' was deleted."
+                fi
 
 
