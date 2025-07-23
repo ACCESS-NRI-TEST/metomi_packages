@@ -1,9 +1,8 @@
 {% set name = "mule" %}
-{% set version = environ.get("VERSION") %}
-
-# Need to fix these versions for compatibility with ANTS
-# {% set py_version = "3.10" %}
-# {% set numpy_version = "1.26.0" %}
+# {% set version = environ.get("VERSION") %}
+# {% set revision = environ.get("REVISION") %}
+{% set version = '1.0' %}
+{% set revision = '126922' %}
 
 package:
   name: "{{ name|lower }}"
@@ -11,7 +10,7 @@ package:
 
 source:
   svn_url: https://code.metoffice.gov.uk/svn/um/mule/trunk
-  svn_rev: {{ environ["REVISION"] }}
+  svn_rev: {{ revision }}
   svn_username: {{ environ["SVN_USERNAME"] }}
   svn_password: {{ environ["SVN_PASSWORD"] }}
 
@@ -21,17 +20,34 @@ build:
 
 requirements:
   build:
+    - python
     - {{ compiler('c') }}
   host:
-    # - python={{ py_version }}
-    - python
+    - python {{ python }}
     - pip
     - numpy <2 # [py<313]
     - numpy >=2 # [py>=313]
-    # - numpy={{ numpy_version }}
+    - six
+    - pillow
+    - setuptools
+    - shumlib # [linux-64]
+  run:
+    - python
     - six
     - pillow
     - shumlib # [linux-64]
+    - mo_pack # [not linux-64]
+    - {{ pin_subpackage('um-spiral-search', exact=True) }} # [linux-64]
+    # - {{ pin_subpackage('um-packing', exact=True) }} # [linux-64]
+    # - {{ pin_subpackage('mule-base', exact=True) }}
+    # - {{ pin_subpackage('um-ppibm', exact=True) }} # [linux-64]
+    # - {{ pin_subpackage('mule-utils', exact=True) }} # [linux-64]
+
+about:
+  home: https://github.com/metomi/mule
+  license: BSD
+  license_family: BSD
+  summary: Mule is a Python API for accessing the various file types used by the UM; the UK Met Office's Unified Model.
 
 outputs:
   - name: um-spiral-search
@@ -41,6 +57,8 @@ outputs:
     build:
       skip: true # [not linux-64]
     requirements:
+      host:
+        - python {{ python }}
       run:
         - python
         - shumlib
@@ -50,118 +68,105 @@ outputs:
       commands:
         - ${PYTHON} -m unittest discover -vs ${SRC_DIR}/um_spiral_search/lib/um_spiral_search/tests
 
-  - name: um-packing
-    files:
-      - lib/python{{ python }}/site-packages/um_packing
-      - lib/python{{ python }}/site-packages/um_packing-{{ version }}.dist-info
-    build:
-      skip: true # [not linux-64]
-    requirements:
-      run:
-        - python
-        - six
-        - shumlib
-    test:
-      imports:
-        - um_packing
-      commands:
-        - ${PYTHON} -m unittest discover -vs ${SRC_DIR}/um_packing/lib/um_packing/tests
+  # - name: um-packing
+  #   files:
+  #     - lib/python{{ python }}/site-packages/um_packing
+  #     - lib/python{{ python }}/site-packages/um_packing-{{ version }}.dist-info
+  #   build:
+  #     skip: true # [not linux-64]
+  #   requirements:
+  #     host:
+  #       - python
+  #     run:
+  #       - python
+  #       - six
+  #       - shumlib
+  #   test:
+  #     imports:
+  #       - um_packing
+  #     commands:
+  #       - ${PYTHON} -m unittest discover -vs ${SRC_DIR}/um_packing/lib/um_packing/tests
 
-  - name: mule-base
-    files:
-      - lib/python{{ python }}/site-packages/mule
-      - lib/python{{ python }}/site-packages/mule-{{ version }}.dist-info
-    build:
-      number: 0 # [linux-64] 
-      number: 1 # [not linux-64]
-    requirements:
-      run:
-        - python
-        - six
-        - {{ pin_subpackage('um-packing', exact=True) }} # [linux-64]
-        - mo_pack # [not linux-64]
-    test:
-      requires:
-        - {{ pin_subpackage('um-packing', exact=True) }}  # [linux-64]
-      imports:
-        - mule
-      commands:
-        - ${PYTHON} -m unittest discover -vs ${SRC_DIR}/mule/lib/mule/tests
+  # - name: mule-base
+  #   files:
+  #     - lib/python{{ python }}/site-packages/mule
+  #     - lib/python{{ python }}/site-packages/mule-{{ version }}.dist-info
+  #   build:
+  #     number: 0 # [linux-64] 
+  #     number: 1 # [not linux-64]
+  #   requirements:
+  #     host:
+  #       - python
+  #     run:
+  #       - python
+  #       - six
+  #       - {{ pin_subpackage('um-packing', exact=True) }} # [linux-64]
+  #       - mo_pack # [not linux-64]
+  #   test:
+  #     requires:
+  #       - {{ pin_subpackage('um-packing', exact=True) }}  # [linux-64]
+  #     imports:
+  #       - mule
+  #     commands:
+  #       - ${PYTHON} -m unittest discover -vs ${SRC_DIR}/mule/lib/mule/tests
 
-  - name: um-ppibm
-    files:
-      - lib/python{{ python }}/site-packages/um_ppibm
-      - lib/python{{ python }}/site-packages/um_ppibm-{{ version }}.dist-info
-    build:
-      skip: true # [not linux-64]
-    requirements:
-      run:
-        - python
-        - six
-        - shumlib
-        - {{ pin_subpackage('mule-base', exact=True) }}
-    test:
-      requires:
-        - {{ pin_subpackage('mule-base', exact=True) }}
-      imports:
-        - um_ppibm
+  # - name: um-ppibm
+  #   files:
+  #     - lib/python{{ python }}/site-packages/um_ppibm
+  #     - lib/python{{ python }}/site-packages/um_ppibm-{{ version }}.dist-info
+  #   build:
+  #     skip: true # [not linux-64]
+  #   requirements:
+  #     host:
+  #       - python
+  #     run:
+  #       - python
+  #       - six
+  #       - shumlib
+  #       - {{ pin_subpackage('mule-base', exact=True) }}
+  #   test:
+  #     requires:
+  #       - {{ pin_subpackage('mule-base', exact=True) }}
+  #     imports:
+  #       - um_ppibm
 
-  - name: mule-utils
-    files:
-      - bin
-      - lib/python{{ python }}/site-packages/um_utils
-      - lib/python{{ python }}/site-packages/um_utils-{{ version }}.dist-info
-    build:
-      skip: true # [not linux-64]
-    requirements:
-      run:
-        - python
-        - six
-        - pillow
-        - shumlib
-        - {{ pin_subpackage('mule-base', exact=True) }}
-        - {{ pin_subpackage('um-ppibm', exact=True) }}
-    test:
-      requires:
-        - {{ pin_subpackage('mule-base', exact=True) }}
-        - {{ pin_subpackage('um-ppibm', exact=True) }}
-      imports:
-        - um_utils
-      commands:
-        # Set directory where tests are stored
-        - TEST_DIR=${SRC_DIR}/um_utils/lib/um_utils/tests
-        # Rename test to avoid 'select' module name clash
-        - mv ${TEST_DIR}/select ${TEST_DIR}/mule_select
-        - ${PYTHON} -m unittest discover -vs ${TEST_DIR}
-        - mule-convpp -h
-        - mule-cumf -h
-        - mule-cutout -h
-        - mule-editmask -h
-        - mule-fixframe -h
-        - mule-pumf -h
-        - mule-select -h
-        - mule-summary -h
-        - mule-trim -h
-        - mule-unpack -h
-        - mule-version -h
-
-  # Mule metapackage
-  - name: mule
-    requirements:
-      run:
-        - python
-        - six
-        - pillow
-        - shumlib # [linux-64]
-        - mo_pack # [not linux-64]
-        - {{ pin_subpackage('um-spiral-search', exact=True) }} # [linux-64]
-        - {{ pin_subpackage('um-packing', exact=True) }} # [linux-64]
-        - {{ pin_subpackage('mule-base', exact=True) }}
-        - {{ pin_subpackage('um-ppibm', exact=True) }} # [linux-64]
-        - {{ pin_subpackage('mule-utils', exact=True) }} # [linux-64]
-
-about:
-  home: https://github.com/metomi/mule
-  license: BSD
-  license_family: BSD
-  summary: Mule is a Python API for accessing the various file types used by the UM; the UK Met Office's Unified Model.
+  # - name: mule-utils
+  #   files:
+  #     - bin
+  #     - lib/python{{ python }}/site-packages/um_utils
+  #     - lib/python{{ python }}/site-packages/um_utils-{{ version }}.dist-info
+  #   build:
+  #     skip: true # [not linux-64]
+  #   requirements:
+  #     host:
+  #       - python
+  #     run:
+  #       - python
+  #       - six
+  #       - pillow
+  #       - shumlib
+  #       - {{ pin_subpackage('mule-base', exact=True) }}
+  #       - {{ pin_subpackage('um-ppibm', exact=True) }}
+  #   test:
+  #     requires:
+  #       - {{ pin_subpackage('mule-base', exact=True) }}
+  #       - {{ pin_subpackage('um-ppibm', exact=True) }}
+  #     imports:
+  #       - um_utils
+  #     commands:
+  #       # Set directory where tests are stored
+  #       - TEST_DIR=${SRC_DIR}/um_utils/lib/um_utils/tests
+  #       # Rename test to avoid 'select' module name clash
+  #       - mv ${TEST_DIR}/select ${TEST_DIR}/mule_select
+  #       - ${PYTHON} -m unittest discover -vs ${TEST_DIR}
+  #       - mule-convpp -h
+  #       - mule-cumf -h
+  #       - mule-cutout -h
+  #       - mule-editmask -h
+  #       - mule-fixframe -h
+  #       - mule-pumf -h
+  #       - mule-select -h
+  #       - mule-summary -h
+  #       - mule-trim -h
+  #       - mule-unpack -h
+  #       - mule-version -h

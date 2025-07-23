@@ -1,6 +1,6 @@
 package:
   name: um_packing
-  version: '{{ environ["VERSION"] }}' # 2024.11.1
+  version: '{{ environ["VERSION"] }}'
 
 source:
   svn_url: https://code.metoffice.gov.uk/svn/um/mule/trunk

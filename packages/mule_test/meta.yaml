@@ -1,10 +1,6 @@
 {% set name = "mule" %}
-{% set version = "2023.08.1" %}
-{% set revision = "119685" %}
-
-# Need to fix these versions for compatibility with ANTS
-{% set py_version = "3.10" %}
-{% set numpy_version = "1.26.0" %}
+{% set version = '1.0' %}
+{% set revision = '126922' %}
 
 package:
   name: "{{ name|lower }}"
@@ -12,134 +8,41 @@ package:
 
 source:
   svn_url: https://code.metoffice.gov.uk/svn/um/mule/trunk
-  svn_rev: "{{ revision }}"
+  svn_rev: {{ revision }}
   svn_username: {{ environ["SVN_USERNAME"] }}
   svn_password: {{ environ["SVN_PASSWORD"] }}
-  patches:
-    - um_ppibm_setup.patch
-    - um_utils_select_exit_code.patch
+
+build:
+  number: 0 # [linux-64]
+  number: 1 # [not linux-64]
 
 requirements:
   build:
-    - {{ compiler('c') }}
+    - {{ compiler('c') }} # [linux-64]
   host:
-    - python={{ py_version }}
+    - python
     - pip
-    - numpy={{ numpy_version }}
-    - six
-    - pillow
-    - shumlib
+    - numpy
+    - shumlib # [linux-64]
+    - setuptools
 
 outputs:
-  - name: mule-um-spiral-search
+  - name: um-spiral-search
     files:
-      - lib/python{{ py_version }}/site-packages/um_spiral_search
-      - lib/python{{ py_version }}/site-packages/um_spiral_search-{{ version|replace(".0", ".") }}.dist-info
+      - lib/python{{ python }}/site-packages/um_spiral_search
+      - lib/python{{ python }}/site-packages/um_spiral_search-{{ python }}.dist-info
+    build:
+      skip: true # [not linux-64]
     requirements:
       run:
-        - python={{ py_version }}
-        - numpy={{ numpy_version }}
+        - python
+        - numpy
         - shumlib
     test:
       imports:
         - um_spiral_search
       commands:
-        - python -m unittest discover -vs ${SP_DIR}/um_spiral_search/tests
-
-  - name: mule-um-packing
-    files:
-      - lib/python{{ py_version }}/site-packages/um_packing
-      - lib/python{{ py_version }}/site-packages/um_packing-{{ version|replace(".0", ".") }}.dist-info
-    requirements:
-      run:
-        - python={{ py_version }}
-        - numpy={{ numpy_version }}
-        - six
-        - shumlib
-    test:
-      imports:
-        - um_packing
-      commands:
-        - python -m unittest discover -vs ${SP_DIR}/um_packing/tests
-
-  - name: mule-base
-    files:
-      - lib/python{{ py_version }}/site-packages/mule
-      - lib/python{{ py_version }}/site-packages/mule-{{ version|replace(".0", ".") }}.dist-info
-    requirements:
-      run:
-        - python={{ py_version }}
-        - numpy={{ numpy_version }}
-        - six
-        - {{ pin_subpackage('mule-um-packing', exact=True) }}
-    test:
-      imports:
-        - mule
-      commands:
-        - python -m unittest discover -vs ${SP_DIR}/mule/tests
-
-  - name: mule-um-ppibm
-    files:
-      - lib/python{{ py_version }}/site-packages/um_ppibm
-      - lib/python{{ py_version }}/site-packages/um_ppibm-{{ version|replace(".0", ".") }}.dist-info
-    requirements:
-      run:
-        - python={{ py_version }}
-        - numpy={{ numpy_version }}
-        - six
-        - shumlib
-        - {{ pin_subpackage('mule-base', exact=True) }}
-    test:
-      imports:
-        - um_ppibm
-
-  - name: mule-um-utils
-    files:
-      - bin
-      - lib/python{{ py_version }}/site-packages/um_utils
-      - lib/python{{ py_version }}/site-packages/um_utils-{{ version|replace(".0", ".") }}.dist-info
-    requirements:
-      run:
-        - python={{ py_version }}
-        - numpy={{ numpy_version }}
-        - six
-        - pillow
-        - shumlib
-        - {{ pin_subpackage('mule-base', exact=True) }}
-        - {{ pin_subpackage('mule-um-ppibm', exact=True) }}
-    test:
-      imports:
-        - um_utils
-      commands:
-        # Rename test to avoid module name clash
-        - mv ${SP_DIR}/um_utils/tests/select ${SP_DIR}/um_utils/tests/mule_select
-        - python -m unittest discover -vs ${SP_DIR}/um_utils/tests
-        - mule-convpp -h
-        - mule-cumf -h
-        - mule-cutout -h
-        - mule-editmask -h
-        - mule-fixframe -h
-        - mule-pumf -h
-        - mule-select -h
-        - mule-summary -h
-        - mule-trim -h
-        - mule-unpack -h
-        - mule-version -h
-
-  # Explicitly define metapackage for installing Mule
-  - name: mule
-    requirements:
-      run:
-        - python={{ py_version }}
-        - numpy={{ numpy_version }}
-        - six
-        - pillow
-        - shumlib
-        - {{ pin_subpackage('mule-um-spiral-search', exact=True) }}
-        - {{ pin_subpackage('mule-um-packing', exact=True) }}
-        - {{ pin_subpackage('mule-base', exact=True) }}
-        - {{ pin_subpackage('mule-um-ppibm', exact=True) }}
-        - {{ pin_subpackage('mule-um-utils', exact=True) }}
+        - $PYTHON -m unittest discover -vs ${SRC_DIR}/um_spiral_search/lib/um_spiral_search/tests
 
 about:
   home: https://github.com/metomi/mule
