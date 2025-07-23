@@ -81,6 +81,8 @@ outputs:
         - {{ pin_subpackage('um-packing', exact=True) }} # [linux-64]
         - mo_pack # [not linux-64]
     test:
+      requires:
+        - {{ pin_subpackage('um-packing', exact=True) }}  # [linux-64]
       imports:
         - mule
       commands:
@@ -99,6 +101,8 @@ outputs:
         - shumlib
         - {{ pin_subpackage('mule-base', exact=True) }}
     test:
+      requires:
+        - {{ pin_subpackage('mule-base', exact=True) }}
       imports:
         - um_ppibm
 
@@ -118,6 +122,9 @@ outputs:
         - {{ pin_subpackage('mule-base', exact=True) }}
         - {{ pin_subpackage('um-ppibm', exact=True) }}
     test:
+      requires:
+        - {{ pin_subpackage('mule-base', exact=True) }}
+        - {{ pin_subpackage('um-ppibm', exact=True) }}
       imports:
         - um_utils
       commands:
