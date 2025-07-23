@@ -1,8 +1,13 @@
+{% set name = "mule" %}
 {% set version = environ.get("VERSION") %}
 
+# Need to fix these versions for compatibility with ANTS
+# {% set py_version = "3.10" %}
+# {% set numpy_version = "1.26.0" %}
+
 package:
-  name: mule
-  version: '{{ version }}'
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
 
 source:
   svn_url: https://code.metoffice.gov.uk/svn/um/mule/trunk
@@ -11,28 +16,145 @@ source:
   svn_password: {{ environ["SVN_PASSWORD"] }}
 
 build:
-  number: 0
+  number: 0 # [linux-64] 
+  number: 1 # [not linux-64]
 
 requirements:
+  build:
+    - {{ compiler('c') }}
   host:
+    # - python={{ py_version }}
     - python
-    # - numpy <2 # [py<313]
-    # - numpy >=2 # [py>=313]
     - pip
-    - setuptools
-  run:
-    - python
-    - numpy
+    - numpy <2 # [py<313]
+    - numpy >=2 # [py>=313]
+    # - numpy={{ numpy_version }}
     - six
-    - um_packing =={{version}} # [linux]
-    - mo_pack # [not linux]
+    - pillow
+    - shumlib # [linux-64]
 
-test:
-  imports:
-    - mule
+outputs:
+  - name: um-spiral-search
+    files:
+      - lib/python{{ python }}/site-packages/um_spiral_search
+      - lib/python{{ python }}/site-packages/um_spiral_search-{{ version }}.dist-info
+    build:
+      skip: true # [not linux-64]
+    requirements:
+      run:
+        - python
+        - shumlib
+    test:
+      imports:
+        - um_spiral_search
+      commands:
+        - ${PYTHON} -m unittest discover -vs ${SRC_DIR}/um_spiral_search/lib/um_spiral_search/tests
+
+  - name: um-packing
+    files:
+      - lib/python{{ python }}/site-packages/um_packing
+      - lib/python{{ python }}/site-packages/um_packing-{{ version }}.dist-info
+    build:
+      skip: true # [not linux-64]
+    requirements:
+      run:
+        - python
+        - six
+        - shumlib
+    test:
+      imports:
+        - um_packing
+      commands:
+        - ${PYTHON} -m unittest discover -vs ${SRC_DIR}/um_packing/lib/um_packing/tests
+
+  - name: mule-base
+    files:
+      - lib/python{{ python }}/site-packages/mule
+      - lib/python{{ python }}/site-packages/mule-{{ version }}.dist-info
+    build:
+      number: 0 # [linux-64] 
+      number: 1 # [not linux-64]
+    requirements:
+      run:
+        - python
+        - six
+        - {{ pin_subpackage('um-packing', exact=True) }} # [linux-64]
+        - mo_pack # [not linux-64]
+    test:
+      imports:
+        - mule
+      commands:
+        - ${PYTHON} -m unittest discover -vs ${SRC_DIR}/mule/lib/mule/tests
+
+  - name: um-ppibm
+    files:
+      - lib/python{{ python }}/site-packages/um_ppibm
+      - lib/python{{ python }}/site-packages/um_ppibm-{{ version }}.dist-info
+    build:
+      skip: true # [not linux-64]
+    requirements:
+      run:
+        - python
+        - six
+        - shumlib
+        - {{ pin_subpackage('mule-base', exact=True) }}
+    test:
+      imports:
+        - um_ppibm
+
+  - name: mule-utils
+    files:
+      - bin
+      - lib/python{{ python }}/site-packages/um_utils
+      - lib/python{{ python }}/site-packages/um_utils-{{ version }}.dist-info
+    build:
+      skip: true # [not linux-64]
+    requirements:
+      run:
+        - python
+        - six
+        - pillow
+        - shumlib
+        - {{ pin_subpackage('mule-base', exact=True) }}
+        - {{ pin_subpackage('um-ppibm', exact=True) }}
+    test:
+      imports:
+        - um_utils
+      commands:
+        # Set directory where tests are stored
+        - TEST_DIR=${SRC_DIR}/um_utils/lib/um_utils/tests
+        # Rename test to avoid 'select' module name clash
+        - mv ${TEST_DIR}/select ${TEST_DIR}/mule_select
+        - ${PYTHON} -m unittest discover -vs ${TEST_DIR}
+        - mule-convpp -h
+        - mule-cumf -h
+        - mule-cutout -h
+        - mule-editmask -h
+        - mule-fixframe -h
+        - mule-pumf -h
+        - mule-select -h
+        - mule-summary -h
+        - mule-trim -h
+        - mule-unpack -h
+        - mule-version -h
+
+  # Mule metapackage
+  - name: mule
+    requirements:
+      run:
+        - python
+        - six
+        - pillow
+        - shumlib # [linux-64]
+        - mo_pack # [not linux-64]
+        - {{ pin_subpackage('um-spiral-search', exact=True) }} # [linux-64]
+        - {{ pin_subpackage('um-packing', exact=True) }} # [linux-64]
+        - {{ pin_subpackage('mule-base', exact=True) }}
+        - {{ pin_subpackage('um-ppibm', exact=True) }} # [linux-64]
+        - {{ pin_subpackage('mule-utils', exact=True) }} # [linux-64]
 
 about:
-  home: https://code.metoffice.gov.uk/trac/um/wiki/working_practices_mule
+  home: https://github.com/metomi/mule
   license: BSD
-  license_file: mule/LICENCE.txt
-  summary: Unified Model Fields File interface
+  license_family: BSD
+  summary: Mule is a Python API for accessing the various file types used by the UM; the UK Met Office's Unified Model.

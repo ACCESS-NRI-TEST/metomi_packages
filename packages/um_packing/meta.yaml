@@ -1,10 +1,10 @@
 package:
   name: um_packing
-  version: '{{ environ["VERSION"] }}'
+  version: '{{ environ["VERSION"] }}' # 2024.11.1
 
 source:
   svn_url: https://code.metoffice.gov.uk/svn/um/mule/trunk
-  svn_rev: {{ environ["REVISION"] }}
+  svn_rev: {{ environ["REVISION"] }} # 126922
   svn_username: {{ environ["SVN_USERNAME"] }}
   svn_password: {{ environ["SVN_PASSWORD"] }}
 
@@ -24,11 +24,16 @@ requirements:
     - setuptools
   run:
     - python
+    - six
     - shumlib
 
 test:
-  imports:
-    - um_packing
+  source_files:
+    - um_packing/lib/um_packing/tests
+  requires:
+    - pytest
+  commands:
+    - {{ PYTHON }} -m pytest -vv
 
 about:
   home: https://code.metoffice.gov.uk/trac/um/wiki/working_practices_mule

@@ -20,9 +20,36 @@ env:
 
 
 jobs:
+    create-tag:
+        name: Create tag
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v4
+            with:
+                fetch-tags: true
+
+          - name: Create tag
+            run: |
+              # Create tag in the format <package_name>-<version>
+              git tag ${{env.TAG_NAME}}
+              git push origin tag ${{env.TAG_NAME}}
+
     create-and-upload-conda-package:
         name: Build with conda and release
         runs-on: ubuntu-latest
+        # runs-on: ${{ matrix.os }}
+        # strategy:
+        #   matrix:
+        #     include:
+        #       - os: ubuntu-latest
+        #         conda-platform: linux-64
+        #       - os: macos-latest
+        #         conda-platform: osx-64
+        #       - os: windows-latest
+        #         conda-platform: win-64
         env:
             VERSION: ${{inputs.version}} # Needed as an env variable for the conda recipe
             REVISION: ${{inputs.revision}} # Needed as an env variable for the conda recipe
@@ -32,26 +59,21 @@ jobs:
             contents: write
         steps:
           - name: Checkout source
-            uses: actions/checkout@v4  
+            uses: actions/checkout@v4
+          
           - name: Set up micromamba
             uses: mamba-org/setup-micromamba@b09ef9b599704322748535812ca03efb2625677b #v2.0.5
             with:
                 environment-file: env-build.yml
-      
-        # Newer ubuntu GitHub runners don't support svn anymore, so we have to install
-        # it manually. (reference --> https://github.com/actions/runner-images/issues/11219#issuecomment-2550505933)
+
+        # GitHub runners don't support svn anymore, so we have to install it manually. 
+        # (https://github.com/actions/runner-images/issues/11219#issuecomment-2550505933)
           - name: Install svn
             run: | 
                 sudo apt-get update 
                 sudo apt-get install -y subversion
                 # Check installation
                 svn --version
-        
-          - name: Create tag
-            run: |
-                # Create tag in the format <package_name>-<version>
-                git tag ${{env.TAG_NAME}}
-                git push origin tag ${{env.TAG_NAME}}
 
           - name: Build and upload conda package
             id: build-upload
@@ -61,15 +83,6 @@ jobs:
                 user: ${{ secrets.ANACONDA_USERNAME }}
                 token: ${{ secrets.ANACONDA_TOKEN }}
                 conda_build_args: --channel accessnri --channel conda-forge --channel nodefaults
-      
-        #   - name: Get package paths
-        #     id: get-paths
-        #     run: |
-        #         # Get a newline-separated string of package paths to pass
-        #         # to the create release step
-        #         space_separated_paths='${{steps.build-upload.outputs.paths}}'
-        #         newline_separated_paths=$(sed 's/ /\\n/g' <<< $space_separated_paths)
-        #         echo "paths=$newline_separated_paths" >> $GITHUB_OUTPUT
                 
           - name: Create Release
             uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 #v2.3.2
@@ -84,7 +97,7 @@ jobs:
     cleanup-tag-on-failure:
         name: Cleanup tag
         runs-on: ubuntu-latest
-        needs: create-and-upload-conda-package
+        needs: [create-tag, create-and-upload-conda-package]
         # Run this job if any of the previous jobs failed (and don't skip if any of the needed jobs is skipped)
         if: ${{ ( always() && failure() ) || cancelled() }}
         permissions:

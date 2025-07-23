@@ -1,5 +1,7 @@
+{% set name = "shumlib" %}
+
 package:
-  name: shumlib
+  name: "{{ name|lower }}"
   version: '{{ environ["VERSION"] }}'
 
 source:
@@ -16,8 +18,9 @@ requirements:
   build:
     - {{ compiler('c') }}
     - {{ compiler('fortran') }}
-    - make
     - binutils
+    - make
+    - sed
 
 about:
   home: https://code.metoffice.gov.uk/trac/utils/shumlib
