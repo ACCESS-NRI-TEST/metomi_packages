@@ -28,12 +28,24 @@ requirements:
 
 outputs:
   - name: um-spiral-search
-    files:
-      - lib/python{{ python }}/site-packages/um_spiral_search
-      - lib/python{{ python }}/site-packages/um_spiral_search-{{ python }}.dist-info
+    script: build_um_spiral_search.sh
+    # files:
+    #   - lib/python{{ python }}/site-packages/um_spiral_search
+    #   - lib/python{{ python }}/site-packages/um_spiral_search-*.dist-info
     build:
       skip: true # [not linux-64]
+      ignore_run_exports:
+        - python
+        - numpy
     requirements:
+      build:
+        - {{ compiler('c') }} # [linux-64]
+      host:
+        - python
+        - pip
+        - numpy
+        - shumlib # [linux-64]
+        - setuptools
       run:
         - python
         - numpy
@@ -42,7 +54,7 @@ outputs:
       imports:
         - um_spiral_search
       commands:
-        - $PYTHON -m unittest discover -vs ${SRC_DIR}/um_spiral_search/lib/um_spiral_search/tests
+        - $PYTHON -m unittest discover -vs ${SP_DIR}/um_spiral_search/tests
 
 about:
   home: https://github.com/metomi/mule
