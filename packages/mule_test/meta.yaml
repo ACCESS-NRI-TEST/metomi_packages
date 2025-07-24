@@ -22,18 +22,29 @@ requirements:
   host:
     - python
     - pip
-    - numpy
+    - numpy=1.26 # [py<=312]
+    - numpy=2.0 # [py>=313]
     - shumlib # [linux-64]
     - setuptools
 
 outputs:
   - name: um-spiral-search
-    files:
-      - lib/python{{ python }}/site-packages/um_spiral_search
-      - lib/python{{ python }}/site-packages/um_spiral_search-{{ python }}.dist-info
+    script: build_um_spiral_search.sh
+    # files:
+    #   - lib/python{{ python }}/site-packages/um_spiral_search
+    #   - lib/python{{ python }}/site-packages/um_spiral_search-*.dist-info
     build:
       skip: true # [not linux-64]
     requirements:
+      build:
+        - {{ compiler('c') }} # [linux-64]
+      host:
+        - python
+        - pip
+        - numpy=1.26 # [py<=312]
+        - numpy=2.0 # [py>=313]
+        - shumlib # [linux-64]
+        - setuptools
       run:
         - python
         - numpy
