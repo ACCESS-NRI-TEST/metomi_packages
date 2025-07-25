@@ -3,13 +3,11 @@ python:
   - 3.10
   - 3.11
   - 3.12
-  - 3.13
 
 numpy:
   - 1.26 # py3.10
   - 1.26 # py3.11
   - 1.26 # py3.12
-  - 2 # py3.13
 
 # Binding numpy version to Python version (https://docs.conda.io/projects/conda-build/en/stable/resources/variants.html#special-variant-keys)
 zip_keys:
