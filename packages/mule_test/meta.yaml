@@ -33,12 +33,12 @@ outputs:
       skip: true # [not linux-64]
     requirements:
       build:
-        - {{ compiler('c') }} # [linux-64]
+        - {{ compiler('c') }}
       host:
         - python
         - pip
         - numpy
-        - shumlib # [linux-64]
+        - shumlib
         - setuptools
       run:
         - python
@@ -58,12 +58,12 @@ outputs:
       skip: true # [not linux-64]
     requirements:
       build:
-        - {{ compiler('c') }} # [linux-64]
+        - {{ compiler('c') }}
       host:
         - python
         - pip
         - numpy
-        - shumlib # [linux-64]
+        - shumlib
         - setuptools
       run:
         - python
@@ -76,6 +76,34 @@ outputs:
         - um_packing
       commands:
         - $PYTHON -m unittest discover -vs ${SP_DIR}/um_packing/tests
+    about:
+      summary: Python extension from the SHUMlib packing library.
+  
+  - name: mule-base
+    script: build_mule_base.sh
+    build:
+      number: 0 # [linux-64]
+      number: 1 # [not linux-64]
+    requirements:
+      host:
+        - python
+        - pip
+        - numpy
+        - setuptools
+      run:
+        - python
+        - numpy
+        - {{ pin_subpackage('um-packing', exact=True) }} # [linux-64]
+        - mo_pack # [not linux-64]
+    test:
+      requires:
+        - six
+      imports:
+        - mule
+      commands:
+        - $PYTHON -m unittest discover -vs ${SP_DIR}/mule/tests
+    about:
+      summary: Unified Model Fields File interface.
 
 about:
   home: https://github.com/metomi/mule
