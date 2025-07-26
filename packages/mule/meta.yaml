@@ -13,24 +13,24 @@ source:
   svn_password: {{ environ["SVN_PASSWORD"] }}
 
 build:
-  number: 0 # [linux-64]
-  number: 1 # [not linux-64]
+  number: 0 # [linux64]
+  number: 1 # [not linux64]
 
 requirements:
   build:
-    - {{ compiler('c') }} # [linux-64]
+    - {{ compiler('c') }} # [linux64]
   host:
     - python
     - pip
     - numpy
-    - shumlib # [linux-64]
+    - shumlib # [linux64]
     - setuptools
 
 outputs:
   - name: um-spiral-search
     script: build_um_spiral_search.sh
     build:
-      skip: true # [not linux-64]
+      skip: true # [not linux64]
     requirements:
       build:
         - {{ compiler('c') }}
@@ -38,12 +38,12 @@ outputs:
         - python
         - pip
         - numpy
-        - shumlib # [linux-64]
+        - shumlib # [linux64]
         - setuptools
       run:
         - python
         - numpy
-        - shumlib # [linux-64]
+        - shumlib # [linux64]
     test:
       imports:
         - um_spiral_search
@@ -55,7 +55,7 @@ outputs:
   - name: um-packing
     script: build_um_packing.sh
     build:
-      skip: true # [not linux-64]
+      skip: true # [not linux64]
     requirements:
       build:
         - {{ compiler('c') }}
@@ -63,12 +63,12 @@ outputs:
         - python
         - pip
         - numpy
-        - shumlib # [linux-64]
+        - shumlib # [linux64]
         - setuptools
       run:
         - python
         - numpy
-        - shumlib # [linux-64]
+        - shumlib # [linux64]
     test:
       requires:
         - six
@@ -82,7 +82,7 @@ outputs:
   - name: mule-base
     script: build_mule_base.sh
     build:
-      skip: true # [not linux-64]
+      skip: true # [not linux64]
     requirements:
       host:
         - python
@@ -106,7 +106,7 @@ outputs:
   - name: mule-base-nopack
     script: build_mule_base.sh
     build:
-      skip: true # [linux-64]
+      skip: true # [linux64]
     requirements:
       host:
         - python
