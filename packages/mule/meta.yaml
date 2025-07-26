@@ -38,12 +38,12 @@ outputs:
         - python
         - pip
         - numpy
-        - shumlib
+        - shumlib # [linux-64]
         - setuptools
       run:
         - python
         - numpy
-        - shumlib
+        - shumlib # [linux-64]
     test:
       imports:
         - um_spiral_search
@@ -63,12 +63,12 @@ outputs:
         - python
         - pip
         - numpy
-        - shumlib
+        - shumlib # [linux-64]
         - setuptools
       run:
         - python
         - numpy
-        - shumlib
+        - shumlib # [linux-64]
     test:
       requires:
         - six
