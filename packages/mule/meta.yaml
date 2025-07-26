@@ -82,8 +82,7 @@ outputs:
   - name: mule-base
     script: build_mule_base.sh
     build:
-      number: 0 # [linux-64]
-      number: 1 # [not linux-64]
+      skip: true # [not linux-64]
     requirements:
       host:
         - python
@@ -93,8 +92,7 @@ outputs:
       run:
         - python
         - numpy
-        - {{ pin_subpackage('um-packing', exact=True) }} # [linux-64]
-        - mo_pack # [not linux-64]
+        - {{ pin_subpackage('um-packing', exact=True) }}
     test:
       requires:
         - six
@@ -104,6 +102,29 @@ outputs:
         - $PYTHON -m unittest discover -vs ${SP_DIR}/mule/tests
     about:
       summary: Unified Model Fields File interface.
+
+  - name: mule-base-nopack
+    script: build_mule_base.sh
+    build:
+      skip: true # [linux-64]
+    requirements:
+      host:
+        - python
+        - pip
+        - numpy
+        - setuptools
+      run:
+        - python
+        - numpy
+    test:
+      requires:
+        - six
+      imports:
+        - mule
+      commands:
+        - $PYTHON -m unittest discover -vs ${SP_DIR}/mule/tests
+    about:
+      summary: Unified Model Fields File interface without packing capability.
 
 about:
   home: https://github.com/metomi/mule
