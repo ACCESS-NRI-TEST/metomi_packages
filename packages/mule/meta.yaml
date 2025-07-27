@@ -102,6 +102,31 @@ outputs:
         - $PYTHON -m unittest discover -vs ${SP_DIR}/mule/tests
     about:
       summary: Unified Model Fields File interface.
+  
+  - name: um-ppibm
+    script: build_um_ppibm.sh
+    build:
+      skip: true # [not linux64]
+    requirements:
+      build:
+        - {{ compiler('c') }}
+      host:
+        - python
+        - pip
+        - numpy
+        - shumlib
+        - setuptools
+      run:
+        - python
+        - numpy
+        - shumlib
+        - six
+        - {{ pin_subpackage('mule-base', exact=True) }}
+    test:
+      imports:
+        - um_ppbim
+    about:
+      summary: Python extension from the SHUMlib packing library.
 
 about:
   home: https://github.com/metomi/mule
