@@ -124,9 +124,64 @@ outputs:
         - {{ pin_subpackage('mule-base', exact=True) }}
     test:
       imports:
-        - um_ppbim
+        - um_ppibm
     about:
-      summary: Python extension from the SHUMlib packing library.
+      summary: |
+        Python extension Python extension for a limited subset of the functionality in the 
+        SHUMlib data_conv library, which is optionally used by the mule-convpp utility.
+
+  - name: mule-utils
+    script: build_mule_utils.sh
+    build:
+      skip: true # [not linux64]
+    requirements:
+      host:
+        - python
+        - pip
+        - numpy
+        - setuptools
+      run:
+        - python
+        - numpy
+        - six
+        - {{ pin_subpackage('mule-base', exact=True) }}
+        - {{ pin_subpackage('um-ppibm', exact=True) }}
+    test:
+      imports:
+        - um_utils
+      commands:
+        # Rename test to avoid 'select' module name clash
+        - mv ${SP_DIR}/um_utils/tests/select ${SP_DIR}/um_utils/tests/mule_select
+        - python -m unittest discover -vs ${SP_DIR}/um_utils/tests
+        - mule-convpp -h
+        - mule-cumf -h
+        - mule-cutout -h
+        - mule-editmask -h
+        - mule-fixframe -h
+        - mule-pumf -h
+        - mule-select -h
+        - mule-summary -h
+        - mule-trim -h
+        - mule-unpack -h
+        - mule-version -h
+    about:
+      summary: Series of specific utility tools for working with UM files.
+  
+  # Create the 'mule' metapackage
+  - name: mule
+    build:
+      skip: true # [not linux64]
+    requirements:
+      run:
+        - python
+        - numpy
+        - shumlib
+        - six
+        - {{ pin_subpackage('um-spiral-search', exact=True) }}
+        - {{ pin_subpackage('um-packing', exact=True) }}
+        - {{ pin_subpackage('mule-base', exact=True) }}
+        - {{ pin_subpackage('um-ppibm', exact=True) }}
+        - {{ pin_subpackage('mule-utils', exact=True) }}
 
 about:
   home: https://github.com/metomi/mule
