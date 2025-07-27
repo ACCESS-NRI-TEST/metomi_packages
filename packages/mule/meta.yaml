@@ -14,16 +14,16 @@ source:
 
 build:
   number: 0 # [linux64]
-  number: 1 # [not linux64]
+  skip: true # [not linux64]
 
 requirements:
   build:
-    - {{ compiler('c') }} # [linux64]
+    - {{ compiler('c') }}
   host:
     - python
     - pip
     - numpy
-    - shumlib # [linux64]
+    - shumlib
     - setuptools
 
 outputs:
@@ -38,12 +38,12 @@ outputs:
         - python
         - pip
         - numpy
-        - shumlib # [linux64]
+        - shumlib
         - setuptools
       run:
         - python
         - numpy
-        - shumlib # [linux64]
+        - shumlib
     test:
       imports:
         - um_spiral_search
@@ -63,12 +63,12 @@ outputs:
         - python
         - pip
         - numpy
-        - shumlib # [linux64]
+        - shumlib
         - setuptools
       run:
         - python
         - numpy
-        - shumlib # [linux64]
+        - shumlib
     test:
       requires:
         - six
@@ -102,29 +102,6 @@ outputs:
         - $PYTHON -m unittest discover -vs ${SP_DIR}/mule/tests
     about:
       summary: Unified Model Fields File interface.
-
-  - name: mule-base-nopack
-    script: build_mule_base.sh
-    build:
-      skip: true # [linux64]
-    requirements:
-      host:
-        - python
-        - pip
-        - numpy
-        - setuptools
-      run:
-        - python
-        - numpy
-    test:
-      requires:
-        - six
-      imports:
-        - mule
-      commands:
-        - $PYTHON -m unittest discover -vs ${SP_DIR}/mule/tests
-    about:
-      summary: Unified Model Fields File interface without packing capability.
 
 about:
   home: https://github.com/metomi/mule
