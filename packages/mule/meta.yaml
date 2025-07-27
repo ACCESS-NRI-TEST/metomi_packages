@@ -171,21 +171,22 @@ outputs:
     about:
       summary: Series of specific utility tools for working with UM files.
   
-  # # Create the 'mule' metapackage
-  # - name: mule
-  #   build:
-  #     skip: true # [not linux64]
-  #   requirements:
-  #     run:
-  #       - python
-  #       - numpy
-  #       - shumlib
-  #       - six
-  #       - {{ pin_subpackage('um-spiral-search', exact=True) }}
-  #       - {{ pin_subpackage('um-packing', exact=True) }}
-  #       - {{ pin_subpackage('mule-base', exact=True) }}
-  #       - {{ pin_subpackage('um-ppibm', exact=True) }}
-  #       - {{ pin_subpackage('mule-utils', exact=True) }}
+  # Create the 'mule' metapackage
+  - name: mule
+    build:
+      skip: true # [not linux64]
+    requirements:
+      run:
+        - python
+        - numpy
+        - pillow
+        - shumlib
+        - six
+        - {{ pin_subpackage('um-spiral-search', exact=True) }}
+        - {{ pin_subpackage('um-packing', exact=True) }}
+        - {{ pin_subpackage('mule-base', exact=True) }}
+        - {{ pin_subpackage('um-ppibm', exact=True) }}
+        - {{ pin_subpackage('mule-utils', exact=True) }}
 
 about:
   home: https://github.com/metomi/mule
