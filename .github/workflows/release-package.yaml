@@ -82,7 +82,7 @@ jobs:
                 meta_yaml_dir: packages/${{ inputs.package_name }}
                 user: ${{ secrets.ANACONDA_USERNAME }}
                 token: ${{ secrets.ANACONDA_TOKEN }}
-                conda_build_args: --channel accessnri --channel conda-forge --channel nodefaults
+                conda_build_args: --channel atteggiani --channel accessnri --channel conda-forge --channel nodefaults
                 
           - name: Create Release
             uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 #v2.3.2
