@@ -28,7 +28,6 @@ requirements:
     - f90nml
     - gdal
     - mule-base
-    - mule-utils
     - numba
     - pykdtree
     - python-stratify
@@ -38,6 +37,7 @@ requirements:
 
 test:
   requires:
+    - mule-utils
     - pytest
   imports:
     - ants

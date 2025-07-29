@@ -1,49 +1,50 @@
-# This file is a template for the .github/workflows/release-package.yamlconda build system.
+{% set name = "ug-ants" %}
+# {% set version = os.environ.get('VERSION') %}
+{% set version = '0.2.0' %}
+
 package:
-    name: ug-ants
-    version: "{{ environ["VERSION"] }}"
+  name: "{{ name|lower }}"
+  version: {{ version }}
 
 source:
-    svn_url: https://code.metoffice.gov.uk/svn/ancil/ug-ants/trunk/
-    svn_rev: {{ environ["REVISION"] }}
-    svn_username: {{ environ["SVN_USERNAME"] }}
-    svn_password: {{ environ["SVN_PASSWORD"] }}
+  svn_url: https://code.metoffice.gov.uk/svn/ancil/ug-ants/tags/{{ version }}
+  # svn_rev: {{ environ["REVISION"] }} #18115
+  svn_rev: 18115
+  svn_username: {{ environ["SVN_USERNAME"] }}
+  svn_password: {{ environ["SVN_PASSWORD"] }}
 
-# build:
-#     number: 1
-#     script: |
-#         export CPATH=$BUILD_PREFIX/include:$CPATH
-#         pushd mule; python -m pip install --no-deps --ignore-installed .; popd
-#         pushd um_utils; python -m pip install --no-deps --ignore-installed .; popd
-#         pushd um_packing; python -m pip install --no-deps --ignore-installed .; popd
-#         pushd um_spiral_search; python -m pip install --no-deps --ignore-installed .; popd
+build:
+  number: 0
+  skip: true # [not linux64]
 
-# requirements:
-#     build:
-#         - {{ compiler('c') }}
-#     host:
-#         - pip
-#         - python
-#         - numpy
-#         - shumlib
-#     run:
-#         - python
-#         - numpy
-#         - six
-#         - shumlib
+requirements:
+  host:
+    - python
+    - setuptools
+  run:
+    - python
+    - numpy<2
+    # - cartopy
+    # - dask
+    # - esmpy
+    # - f90nml
+    # - gdal
+    # - numba
+    # - pykdtree
+    # - python-stratify
+    # - shumlib
+    - scitools-iris
+    # - um-spiral-search
 
-# test:
-#     imports:
-#         - mule
-#         - um_utils
-#         - um_packing
-#         - um_spiral_search
-#     commands:
-#         - mule-pumf --help
-#         - mule-version
+test:
+  imports:
+    - ugants
+  commands:
+    - ug-ants-version
+    - $PYTHON -m unittest discover -vs ${SP_DIR}/ug-ants/tests
 
-# about:
-#     home: https://code.metoffice.gov.uk/trac/um
-#     license: BSD
-#     license_file: mule/LICENCE.txt
-#     summary: Unified Model Fields File interface
+about:
+  home: https://code.metoffice.gov.uk/doc/ancil/ug-ants/latest/contributing.html
+  license: BSD
+  license_family: BSD
+  summary: UG-ANTS is a Python library to provide the capabilities to developing ancillary files on unstructured grids.
