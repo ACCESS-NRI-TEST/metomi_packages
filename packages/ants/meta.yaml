@@ -10,6 +10,8 @@ source:
   svn_rev: {{ environ["REVISION"] }}
   svn_username: {{ environ["SVN_USERNAME"] }}
   svn_password: {{ environ["SVN_PASSWORD"] }}
+  patches:
+    - unit_testing.patch
 
 build:
   number: 0
@@ -31,7 +33,6 @@ requirements:
     - numba
     - pykdtree
     - python-stratify
-    - shumlib
     - scitools-iris
     - um-spiral-search
 
@@ -47,9 +48,11 @@ test:
     - ancil_fill_n_merge.py -h
     - ancil_general_regrid.py -h
     - ants-version
-    # ANTS test suite fails for different reasons, but it doesn't necessarily mean
-    # the actual package is not usable. For now we cannot run the tests.
-    # - $PYTHON -m unittest discover -vs ${SP_DIR}/ants/tests
+    # Perform unit tests with the included patch, to avoid failures due to test syntax problems
+    # for different versions.
+    # Skipping the integration tests as they require a specific environment setup.
+    - test_dir=${SP_DIR}/ants/tests
+    - $PYTHON -m pytest -vs $test_dir -W default --ignore-glob "$test_dir/**/test_integration.py"
 
 about:
   home: https://code.metoffice.gov.uk/doc/ancil/ants/latest/index.html
