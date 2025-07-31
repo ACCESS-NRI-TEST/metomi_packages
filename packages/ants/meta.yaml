@@ -52,7 +52,7 @@ test:
     # for different versions.
     # Skipping the integration tests as they require a specific environment setup.
     - test_dir=${SP_DIR}/ants/tests
-    - $PYTHON -m pytest -vs $test_dir -W default --ignore-glob "$test_dir/**/test_integration.py"
+    - ANTS_TEST_CREATE_MISSING=1 $PYTHON -m pytest -vs $test_dir -W default --ignore-glob "$test_dir/**/test_integration.py"
 
 about:
   home: https://code.metoffice.gov.uk/doc/ancil/ants/latest/index.html

@@ -1,6 +1,6 @@
 --- lib/ants/tests/conftest.py
 +++ lib/ants/tests/conftest.py
-@@ -14,3 +14,31 @@ def pytest_runtestloop(session):
+@@ -14,3 +14,33 @@ def pytest_runtestloop(session):
      session.add_marker(
          pytest.mark.filterwarnings("ignore:Downloading:cartopy.io.DownloadWarning")
      )
@@ -13,7 +13,9 @@
 +    # Deprecation warnings for some ants versions
 +    (AssertionError, "FutureWarning not raised"),
 +    # Issue with iris cube test syntax for some python versions
-+    (ValueError, "For performance reasons, `meta` cannot be `None` if `data` is anything other than a Numpy or Dask array.")
++    (ValueError, "For performance reasons, `meta` cannot be `None` if `data` is anything other than a Numpy or Dask array."),
++    # Issue with license headers
++    (AssertionError, "There were license header failures."),
 +]
 +
 +@pytest.hookimpl(tryfirst=True, hookwrapper=True)
