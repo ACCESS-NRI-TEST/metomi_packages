@@ -1,4 +1,4 @@
-{% set name = "ug-ants" %}
+{% set name = "ugants" %}
 # {% set version = os.environ.get('VERSION') %}
 {% set version = '0.2.0' %}
 
@@ -24,24 +24,30 @@ requirements:
   run:
     - python
     - numpy<2
-    # - cartopy
-    # - dask
-    # - esmpy
-    # - f90nml
-    # - gdal
-    # - numba
-    # - pykdtree
-    # - python-stratify
-    # - shumlib
-    - scitools-iris
-    # - um-spiral-search
+    - dask<=2025.3.0
+    - esmf=8.4.2=mpi_mpich_h2a0de38_103
+    - esmpy=8.4.2
+    - geovista
+    - importlib-metadata=7.1.0
+    - iris-esmf-regrid=0.9.0
+    - pykdtree
+    - scitools-iris=3.9
 
 test:
+  source_files:
+    - lib/ugants/tests/resources
+  requires:
+    - pytest
+    - filelock
+    - iris-sample-data
   imports:
     - ugants
   commands:
     - ug-ants-version
-    - $PYTHON -m unittest discover -vs ${SP_DIR}/ug-ants/tests
+    # Enable ugants to find the proper test resources
+    - ln -vs ${SRC_DIR}/lib/ugants/tests/resources ${SP_DIR}/ugants/tests/resources
+    # Test ugants
+    - $PYTHON -m pytest ${SP_DIR}/ugants/tests -W default
 
 about:
   home: https://code.metoffice.gov.uk/doc/ancil/ug-ants/latest/contributing.html
