@@ -1,6 +1,5 @@
 {% set name = "ugants" %}
-# {% set version = os.environ.get('VERSION') %}
-{% set version = '0.2.0' %}
+{% set version = os.environ.get('VERSION') %}
 
 package:
   name: "{{ name|lower }}"
@@ -8,8 +7,7 @@ package:
 
 source:
   svn_url: https://code.metoffice.gov.uk/svn/ancil/ug-ants/tags/{{ version }}
-  # svn_rev: {{ environ["REVISION"] }} #18115
-  svn_rev: 18115
+  svn_rev: {{ environ["REVISION"] }}
   svn_username: {{ environ["SVN_USERNAME"] }}
   svn_password: {{ environ["SVN_PASSWORD"] }}
 
@@ -47,7 +45,7 @@ test:
     # Enable ugants to find the proper test resources
     - ln -vs ${SRC_DIR}/lib/ugants/tests/resources ${SP_DIR}/ugants/tests/resources
     # Test ugants
-    - $PYTHON -m pytest ${SP_DIR}/ugants/tests -W default
+    - $PYTHON -m pytest ${SP_DIR}/ugants/tests --override-ini addopts="" --override-ini filterwarnings=""
 
 about:
   home: https://code.metoffice.gov.uk/doc/ancil/ug-ants/latest/contributing.html

@@ -1,21 +1,14 @@
 --- lib/ants/tests/conftest.py
 +++ lib/ants/tests/conftest.py
-@@ -14,3 +14,33 @@ def pytest_runtestloop(session):
+@@ -14,3 +14,26 @@ def pytest_runtestloop(session):
      session.add_marker(
          pytest.mark.filterwarnings("ignore:Downloading:cartopy.io.DownloadWarning")
      )
 +
 +# Skip specific failing tests for conda build purposes
 +SKIP_RULES = [
-+    # Pytest syntax problem for some python versions
-+    (AttributeError, "'called_once_with' is not a valid assertion."),
-+    (AttributeError, "'called_with' is not a valid assertion."),
-+    # Deprecation warnings for some ants versions
++    # Running pytest with -W default causes issues with FutureWarnings not being raised
 +    (AssertionError, "FutureWarning not raised"),
-+    # Issue with iris cube test syntax for some python versions
-+    (ValueError, "For performance reasons, `meta` cannot be `None` if `data` is anything other than a Numpy or Dask array."),
-+    # Issue with license headers
-+    (AssertionError, "There were license header failures."),
 +]
 +
 +@pytest.hookimpl(tryfirst=True, hookwrapper=True)

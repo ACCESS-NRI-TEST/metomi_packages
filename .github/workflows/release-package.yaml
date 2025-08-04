@@ -18,7 +18,6 @@ run-name: "Release ${{ inputs.package_name }} ${{ inputs.version }}"
 env:
     TAG_NAME: ${{ inputs.package_name }}-${{ inputs.version }}
 
-
 jobs:
     create-tag:
         name: Create tag
@@ -44,12 +43,14 @@ jobs:
         # strategy:
         #   matrix:
         #     include:
-        #       - os: ubuntu-latest
-        #         conda-platform: linux-64
-        #       - os: macos-latest
-        #         conda-platform: osx-64
-        #       - os: windows-latest
-        #         conda-platform: win-64
+        #       - os: ubuntu-latest #linux64
+        #         # conda-platform: linux64
+        #       - os: macos-latest #osx64
+        #         # conda-platform: osx64
+        #       - os: macos-14-arm64 #osx64 and arm64
+        #         # conda-platform: osxarm64
+        #       - os: windows-latest #win64
+        #         # conda-platform: win64
         env:
             VERSION: ${{inputs.version}} # Needed as an env variable for the conda recipe
             REVISION: ${{inputs.revision}} # Needed as an env variable for the conda recipe
@@ -114,5 +115,3 @@ jobs:
                     git push origin :${{ env.TAG_NAME }}
                     echo "A job in the current workflow failed. Tag '${{ env.TAG_NAME }}' was deleted."
                 fi
-
-

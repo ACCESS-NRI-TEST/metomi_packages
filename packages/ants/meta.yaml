@@ -33,10 +33,13 @@ requirements:
     - numba
     - pykdtree
     - python-stratify
-    - scitools-iris
+    - scitools-iris=3.7.1
     - um-spiral-search
 
 test:
+  source_files:
+    - lib/ants/tests/resources
+    - lib/ants/tests/results
   requires:
     - mule-utils
     - pytest
@@ -48,11 +51,10 @@ test:
     - ancil_fill_n_merge.py -h
     - ancil_general_regrid.py -h
     - ants-version
-    # Perform unit tests with the included patch, to avoid failures due to test syntax problems
-    # for different versions.
-    # Skipping the integration tests as they require a specific environment setup.
-    - test_dir=${SP_DIR}/ants/tests
-    - ANTS_TEST_CREATE_MISSING=1 $PYTHON -m pytest -vs $test_dir -W default --ignore-glob "$test_dir/**/test_integration.py"
+    # Enable ants to find the proper test resources and results
+    - ln -vs ${SRC_DIR}/lib/ants/tests/resources ${SP_DIR}/ants/tests/resources
+    - ln -vs ${SRC_DIR}/lib/ants/tests/results ${SP_DIR}/ants/tests/results
+    - $PYTHON -m pytest -W default -vs ${SP_DIR}/ants/tests
 
 about:
   home: https://code.metoffice.gov.uk/doc/ancil/ants/latest/index.html
