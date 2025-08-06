@@ -6,19 +6,53 @@ on:
                 description: 'Name of the package to release'
                 type: string
                 required: true
-            version:
-                description: 'Version of the package to release'
-                type: string
-                required: true
             revision:
                 description: 'SVN revision associated with the package version to release'
                 type: string
                 required: true
-run-name: "Release ${{ inputs.package_name }} ${{ inputs.version }}"
-env:
-    TAG_NAME: ${{ inputs.package_name }}-${{ inputs.version }}
+run-name: "Release ${{ inputs.package_name }}"
 
 jobs:
+    find-version:
+        name: Find version from revision
+        runs-on: ubuntu-latest
+        outputs:
+            version: ${{ steps.get-version.outputs.version }}
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v4
+        
+          # GitHub runners don't support svn anymore, so we have to install it manually. 
+          # (https://github.com/actions/runner-images/issues/11219#issuecomment-2550505933)
+          - name: Install svn
+            run: | 
+                sudo apt-get update
+                sudo apt-get install -y subversion
+                # Check installation
+                svn --version
+          
+          # Set up gpg cache for svn authentication using PRESET_PASSPHRASE
+          # (https://www.gnupg.org/documentation/manuals/gnupg/Agent-PRESET_005fPASSPHRASE.html)
+          - name: gpg-setup
+            run: | 
+                # Start a gpg agent
+                eval $(gpg-agent --daemon -vs)
+                # Set passphrase for the SVN repository
+                gpg-connect-agent <<< "PRESET_PASSPHRASE 
+                sudo apt-get update
+                sudo apt-get install -y subversion
+                # Check installation
+                svn --version
+        
+            - name: Get package version
+            id: get-version
+            run: |
+              # Extract the version from the package's meta.yaml file
+              VERSION=$(grep 'version:' packages/${{ inputs.package_name }}/meta.yaml | awk '{print $2}')
+              TAG_NAME="${{ inputs.package_name }}-${VERSION}"
+              echo "version=$VERSION" >> $GITHUB_OUTPUT
+              echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+
     create-tag:
         name: Create tag
         runs-on: ubuntu-latest

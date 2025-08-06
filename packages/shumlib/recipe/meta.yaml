@@ -7,8 +7,6 @@ package:
 source:
   svn_url: https://code.metoffice.gov.uk/svn/utils/shumlib/trunk
   svn_rev: {{ environ["REVISION"] }}
-  svn_username: {{ environ["SVN_USERNAME"] }}
-  svn_password: {{ environ["SVN_PASSWORD"] }}
 
 build:
   number: 0
