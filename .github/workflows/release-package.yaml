@@ -49,12 +49,12 @@ jobs:
           TAG_NAME="${{ inputs.package_name }}-${{ env.VERSION }}"
           git tag $TAG_NAME
           git push origin tag $TAG_NAME
-          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUTS
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
       
       - name: Set up micromamba
         uses: mamba-org/setup-micromamba@b09ef9b599704322748535812ca03efb2625677b #v2.0.5
         with:
-          environment-file: env-build.ym
+          environment-file: env-build.yml
 
       - name: Build and upload conda package
         id: build-upload
