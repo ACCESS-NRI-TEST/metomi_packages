@@ -10,18 +10,24 @@ on:
         description: 'SVN revision associated with the package version to release'
         type: string
         required: true
-run-name: "Release ${{ inputs.package_name }}"
+      version:
+        description: 'Version of the package to release'
+        type: string
+        required: true
+run-name: "Release ${{ inputs.package_name }} ${{ inputs.version }}"
+env:
+    TAG_NAME: ${{ inputs.package_name }}-${{ inputs.version }}
+    RELEASE_NAME: ${{ inputs.package_name }} ${{ inputs.version }}
 
 jobs:
   create-conda-package:
     name: Create conda package
     runs-on: ubuntu-latest
-    outputs:
-      tag_name: ${{ steps.create-tag.outputs.tag_name }}
     env:
       REVISION: ${{ inputs.revision }} # Needed as an env variable for the conda recipe
-    permissions:
-      contents: write
+      VERSION: ${{ inputs.version }} # Needed as an env variable for the conda recipe
+    outputs:
+        paths: ${{ steps.conda-build.outputs.paths }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -32,24 +38,6 @@ jobs:
           username: '${{ secrets.MOSRS_USERNAME }}'
           password: '${{ secrets.MOSRS_PASSWORD }}'
           realm: '<https://code.metoffice.gov.uk:443> Met Office Code'
-    
-      - name: Get package version
-        id: get-version
-        run: |
-          # Extract the version from svn property `fcm:revision`
-          VERSION=$(bash packages/${{ inputs.package_name }}/get-version.sh ${{ env.REVISION }})
-          echo "${{ inputs.package_name }} version: $VERSION"
-          # Add VERSION to the environment variables as it's needed by the conda recipe
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-        
-      - name: Create tag
-        id: create-tag
-        run: |
-          # Create tag in the format <package_name>-<version>
-          TAG_NAME="${{ inputs.package_name }}-${{ env.VERSION }}"
-          git tag $TAG_NAME
-          git push origin tag $TAG_NAME
-          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
       
       - name: Set up micromamba
         uses: mamba-org/setup-micromamba@b09ef9b599704322748535812ca03efb2625677b #v2.0.5
@@ -57,34 +45,46 @@ jobs:
           environment-file: env-build.yml
 
       - name: Build and upload conda package
-        id: build-upload
+        id: conda-build
         uses: ACCESS-NRI/action-build-and-upload-conda-packages@davide/7-enable-multi-outputs
         with:
           meta_yaml_dir: packages/${{ inputs.package_name }}/recipe
           user: ${{ secrets.ANACONDA_USERNAME }}
           token: ${{ secrets.ANACONDA_TOKEN }}
           conda_build_args: -c atteggiani -c accessnri -c conda-forge -c nodefaults
-          
+    
+  create-release:
+    name: Create release
+    runs-on: ubuntu-latest
+    needs: create-conda-package
+    permissions:
+      contents: write
+    steps:
+      - name: Create tag
+        id: create-tag
+        run: |
+          # Create tag
+          git tag '${{ env.TAG_NAME }}'
+          git push origin tag '${{ env.TAG_NAME }}'
+
       - name: Create Release
         uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 #v2.3.2
         with:
-          tag_name: ${{ steps.create-tag.outputs.tag_name }}
-          name: ${{ inputs.package_name }} ${{ env.VERSION }}
+          tag_name: '${{ env.TAG_NAME }}'
+          name: '${{ env.RELEASE_NAME }}'
           generate_release_notes: false
           fail_on_unmatched_files: true
           files: |-
-            ${{steps.build-upload.outputs.paths}}
+            ${{ needs.create-conda-package.outputs.paths }}
 
   cleanup-tag-on-failure:
     name: Cleanup tag
     runs-on: ubuntu-latest
-    needs: create-conda-package
+    needs: [create-conda-package, create-release]
     # Run this job if any of the previous jobs failed (and don't skip if any of the needed jobs is skipped)
     if: ${{ ( always() && failure() ) || cancelled() }}
     permissions:
       contents: write
-    env:
-      TAG_NAME: ${{ needs.create-conda-package.outputs.tag_name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
