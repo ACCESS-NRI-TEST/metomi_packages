@@ -9,84 +9,118 @@ on:
   # schedule:
   #     - cron: '30 2 15 * *'
   # Run the 15th of each month at (2:30am England / MOSRS time)
+env:
+  RELEASE_WORKFLOW: release-package.yaml
+  SVN_REALM: '<https://code.metoffice.gov.uk:443> Met Office Code'
 
 jobs:
-  # Check new releases for all packages in the 'packages/' directory
-  # for them can be checked at the same time
-  check-new-release-shumlib-ugants:
-    name: Check release
+  get-packages:
+    name: Get packages name
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.get-packages.outputs.packages }}
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+            fetch-depth: 0
+        
+      - name: Get package names
+        id: get-packages
+        run: |
+          # Get package names from directories inside `packages/`)
+          packages=$(find packages -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)
+          echo "packages=$packages" >> $GITHUB_OUTPUT
+
+  check-new-releases:
+    name: Check new releases
     runs-on: ubuntu-latest
     needs: get-packages
     outputs:
-      version: ${{ steps.get-release.outputs.version }}
-      revision: ${{ steps.get-release.outputs.revision }}
+      release_json: ${{ steps.check-new-releases.outputs.release_json }}
     env:
       GH_TOKEN: ${{github.token}}
     permissions:
       actions: write
-      contents: read
-    strategy:
-      matrix:
-          package: ${{fromJson(needs.get-packages.outputs.packages)}}      
     steps:
-        - name: Checkout source
-          uses: actions/checkout@v4
-          with:
-            fetch-tags: true
-            fetch-depth: 0
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0
 
-        - name: Get ${{matrix.package}} latest release from MOSRS
-          id: get-release
-          run: |
-            # Get the latest release from ${{matrix.package}}'s repository on MOSRS
-            echo "Checking latest release for ${{matrix.package}} on MOSRS ..."
-            # Get package URL from 'svn_url' field of conda recipe (trimming the '/trunk' part)
-            package_url=$(dirname $(grep -Po '^\s*svn_url:\s*\K.*' packages/${{matrix.package}}/meta.yaml))
-            # Get latest release from MOSRS (only those in a CalVer format --> YYYY.MM.MINOR = REV)
-            latest_release=$(svn propget fcm:revision $package_url \
-            --username=${{secrets.MOSRS_USERNAME}} --password=${{secrets.MOSRS_PASSWORD}} \
-            | grep -Po '^\d{4}\.\d{2}.\d+\s*=\s*\d*' | tail -n1)
-            if [ -z "$latest_release" ]; then
-              echo "No release found for ${{matrix.package}} on MOSRS."
-              exit 1
-            else
-              echo "Found ${{matrix.package}}'s latest release on MOSRS: \"$latest_release\"."
-              # Extract version from the latest release
-              version=$(cut -d'=' -f1 <<< $latest_release | xargs)
-              # Extract revision from the latest release
-              revision=$(cut -d'=' -f2 <<< $latest_release | xargs)
-              echo "version=$version" >> $GITHUB_OUTPUT
-              echo "revision=$revision" >> $GITHUB_OUTPUT
-            fi
-
-        - name: Check ${{matrix.package}} latest release
-          env:
-            VERSION: ${{ steps.get-release.outputs.version }}
-            REVISION: ${{ steps.get-release.outputs.revision }}
-          run: |
-            # Check if package latest release on MOSRS is already present in this repo.
-            if [ -z $(git tag -l ${{matrix.package}}-${{env.VERSION}}) ]; then 
-                # If a release is not present, create one.
-                echo "\"${{matrix.package}}-${{env.VERSION}}\" release not found."
-                echo "Creating \"${{matrix.package}}-${{env.VERSION}}\" release ..."
-                cmd="gh workflow run release-package.yaml \
-                --field package_name=${{matrix.package}} \
-                --field version=${{env.VERSION}} \
-                --field revision=${{env.REVISION}} \
-                "
-                echo "$cmd"
-                eval "$cmd"
-            else
-                # If a release is present don't do anything.
-                echo "\"${{matrix.package}}-${{env.VERSION}}\" release already present. Nothing to do."
-            fi
-
-- name: Get package version
-        id: get-version
+      - name: Cache SVN auth for MOSRS
+        uses: access-nri/actions/.github/actions/cache-svn-auth@main
+        with: 
+          username: '${{ secrets.MOSRS_USERNAME }}'
+          password: '${{ secrets.MOSRS_PASSWORD }}'
+          realm: '${{ env.SVN_REALM}}'
+    
+      - name: Check new releases
+        id: check-new-releases
         run: |
-          # Extract the version from svn property `fcm:revision`
-          VERSION=$(bash packages/${{ inputs.package_name }}/get-version.sh ${{ env.REVISION }})
-          echo "${{ inputs.package_name }} version: $VERSION"
-          # Add VERSION to the environment variables as it's needed by the conda recipe
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-      
+          # For each package, check if a new release on MOSRS is present
+          release_json=[]
+          for package in ${{ needs.get-packages.outputs.packages }}; do
+            echo "Checking new release for $package ..."
+            latest_prop=($(bash packages/$package/get-latest-mosrs-version.sh))
+            latest_version=${latest_prop[0]}
+            latest_revision=${latest_prop[1]}
+            # If a tag in the format '<PACKAGE-NAME>-<VERSION>' is not already present,
+            # add the latest version to the packages to release (release_json).
+            if [ -z "$(git tag -l $package-$latest_version)" ]; then
+              echo "Found new $package version on MOSRS: 
+              echo "  version: $latest_version"
+              echo "  revision: $latest_revision"
+              # if the package is 'ugants', we can release it directly, otherwise we add it to the json
+              # to be released in a chain (shumlib -> mule -> ants)
+              if [ "$package" == "ugants" ]; then
+                echo "Releasing ${package}-${latest_version} ..."
+                gh workflow run ${{ env.RELEASE_WORKFLOW }} \
+                  --field package_name=$package \
+                  --field version=$latest_version \
+                  --field revision=$latest_revision
+                run_url=$(gh run list --workflow ${{ env.RELEASE_WORKFLOW }} --limit 1 --json url | jq '.[0].url')
+                echo "Release workflow run: $run_url"
+              else
+              json=$(
+                jq -n --arg pkg "$package" --arg rev "$latest_revision" --arg ver "$latest_version" \
+                '{package_name: $pkg, version: $ver, revision: $rev}'
+              )
+              release_json=$(jq --argjson json_obj "$json" '. += [$json_obj]' <<< "$release_json")
+              echo "Added ${package}-${latest_version} to the packages to be released."
+            else
+              echo "Latest $package version on MOSRS ('$latest_version') is already released."
+            fi
+          done
+          if [[ $release_json != '[]' ]]; then
+            echo "New packages to be released: $release_json"
+          else
+            echo "No new packages to be released."
+          fi
+    
+  release-new-packages:
+    name: Release new packages
+    runs-on: ubuntu-latest
+    needs: check-new-releases
+    # Only run if there are new packages to release
+    if: ${{ needs.check-new-releases.outputs.release_json != '[]' }}
+    env:
+      GH_TOKEN: ${{github.token}}
+    permissions:
+      actions: write
+    steps:
+      - name: Order packages
+        id: order-packages
+        run: |
+          # Order packages to release in the correct chain (shumlib -> mule -> ants)
+          release_json=${{ needs.check-new-releases.outputs.release_json }}
+          ordered_json=$(jq -c 'sort_by(.package_name)' <<< "$release_json")
+          echo "ordered_json=$ordered_json" >> $GITHUB_OUTPUT
+      - name: Release packages
+        run: |
+          echo "Releasing packages ..."
+          gh workflow run ${{ env.RELEASE_WORKFLOW }} --field release_json='${{ steps.order-packages.outputs.ordered_json }}'
+          run_url=$(gh run list --workflow ${{ env.RELEASE_WORKFLOW }} --limit 1 --json url | jq '.[0].url')
+          echo "Release workflow run: $run_url"
+    
