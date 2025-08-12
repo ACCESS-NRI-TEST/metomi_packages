@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
   # schedule:
   #     - cron: '30 2 15 * *'
-  # Run the 15th of each month at (2:30am England / MOSRS time)
+  # Run the 15th of each month at 2:30am UK (MOSRS) time
 env:
   RELEASE_WORKFLOW: release-package.yaml
   SVN_REALM: '<https://code.metoffice.gov.uk:443> Met Office Code'
@@ -28,8 +28,8 @@ jobs:
       - name: Get package names
         id: get-packages
         run: |
-          # Get package names from directories inside `packages/`)
-          packages=$(find packages -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)
+          # Get package names from directories inside 'packages/'
+          packages=$(find ./packages -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | tr '\n' ' ')
           echo "packages=$packages" >> $GITHUB_OUTPUT
 
   check-new-releases:
@@ -69,7 +69,7 @@ jobs:
             # If a tag in the format '<PACKAGE-NAME>-<VERSION>' is not already present,
             # add the latest version to the packages to release (release_json).
             if [ -z "$(git tag -l $package-$latest_version)" ]; then
-              echo "Found new $package version on MOSRS: 
+              echo "Found new $package version on MOSRS:"
               echo "  version: $latest_version"
               echo "  revision: $latest_revision"
               # if the package is 'ugants', we can release it directly, otherwise we add it to the json
@@ -83,12 +83,13 @@ jobs:
                 run_url=$(gh run list --workflow ${{ env.RELEASE_WORKFLOW }} --limit 1 --json url | jq '.[0].url')
                 echo "Release workflow run: $run_url"
               else
-              json=$(
-                jq -n --arg pkg "$package" --arg rev "$latest_revision" --arg ver "$latest_version" \
-                '{package_name: $pkg, version: $ver, revision: $rev}'
-              )
-              release_json=$(jq --argjson json_obj "$json" '. += [$json_obj]' <<< "$release_json")
-              echo "Added ${package}-${latest_version} to the packages to be released."
+                json=$(
+                  jq -n --arg pkg "$package" --arg rev "$latest_revision" --arg ver "$latest_version" \
+                  '{package_name: $pkg, version: $ver, revision: $rev}'
+                )
+                release_json=$(jq --argjson json_obj "$json" '. += [$json_obj]' <<< "$release_json")
+                echo "Added ${package}-${latest_version} to the packages to be released."
+              fi
             else
               echo "Latest $package version on MOSRS ('$latest_version') is already released."
             fi
