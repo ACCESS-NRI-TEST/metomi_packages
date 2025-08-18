@@ -54,7 +54,7 @@ jobs:
         with: 
           username: '${{ secrets.MOSRS_USERNAME }}'
           password: '${{ secrets.MOSRS_PASSWORD }}'
-          realm: '${{ env.SVN_REALM}}'
+          realm: '${{ env.SVN_REALM }}'
     
       - name: Check new releases
         id: check-new-releases
@@ -76,12 +76,11 @@ jobs:
               # to be released in a chain (shumlib -> mule -> ants)
               if [ "$package" == "ugants" ]; then
                 echo "Releasing ${package}-${latest_version} ..."
-                gh workflow run ${{ env.RELEASE_WORKFLOW }} \
-                  --field package_name=$package \
-                  --field version=$latest_version \
-                  --field revision=$latest_revision
-                run_url=$(gh run list --workflow ${{ env.RELEASE_WORKFLOW }} --limit 1 --json url | jq '.[0].url')
-                echo "Release workflow run: $run_url"
+                options="--field package_name=$package --field version=$latest_version --field revision=$latest_revision"
+                echo "Running '${{ env.RELEASE_WORKFLOW }}' workflow with the following options: '$options'"
+                gh workflow run ${{ env.RELEASE_WORKFLOW }} $options
+                # run_url=$(gh run list --workflow ${{ env.RELEASE_WORKFLOW }} --limit 1 --json url | jq '.[0].url')
+                # echo "Release workflow run: $run_url"
               else
                 json=$(
                   jq -n --arg pkg "$package" --arg rev "$latest_revision" --arg ver "$latest_version" \
@@ -121,7 +120,9 @@ jobs:
       - name: Release packages
         run: |
           echo "Releasing packages ..."
-          gh workflow run ${{ env.RELEASE_WORKFLOW }} --field release_json='${{ steps.order-packages.outputs.ordered_json }}'
-          run_url=$(gh run list --workflow ${{ env.RELEASE_WORKFLOW }} --limit 1 --json url | jq '.[0].url')
-          echo "Release workflow run: $run_url"
+          options='--field release_json=${{ steps.order-packages.outputs.ordered_json }} --repo ${{ github.repository }}'
+          echo "Running '${{ env.RELEASE_WORKFLOW }}' workflow with the following options: '$options'"
+          gh workflow run ${{ env.RELEASE_WORKFLOW }} $options
+          # run_url=$(gh run list --workflow ${{ env.RELEASE_WORKFLOW }} --limit 1 --json url | jq '.[0].url')
+          # echo "Release workflow run: $run_url"
     
