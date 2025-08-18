@@ -79,14 +79,17 @@ jobs:
                 options="--field package_name=$package --field version=$latest_version --field revision=$latest_revision"
                 echo "Running '${{ env.RELEASE_WORKFLOW }}' workflow with the following options: '$options'"
                 gh workflow run ${{ env.RELEASE_WORKFLOW }} $options
-                # run_url=$(gh run list --workflow ${{ env.RELEASE_WORKFLOW }} --limit 1 --json url | jq '.[0].url')
-                # echo "Release workflow run: $run_url"
+                # We wait for the GitHub database to be updated with the latest triggered run
+                # and then we get the its URL
+                sleep 2 
+                run_url=$(gh run list --workflow ${{ env.RELEASE_WORKFLOW }} --limit 1 --json url --jq '.[0].url')
+                echo "::notice::Releasing ${package}-${latest_version}. Release workflow run: $run_url"
               else
                 json=$(
                   jq -n --arg pkg "$package" --arg rev "$latest_revision" --arg ver "$latest_version" \
                   '{package_name: $pkg, version: $ver, revision: $rev}'
                 )
-                release_json=$(jq --argjson json_obj "$json" '. += [$json_obj]' <<< "$release_json")
+                release_json=$(jq -c --argjson json_obj "$json" '. += [$json_obj]' <<< "$release_json")
                 echo "Added ${package}-${latest_version} to the packages to be released."
               fi
             else
@@ -98,7 +101,11 @@ jobs:
           else
             echo "No new packages to be released."
           fi
-    
+          # Use a multi-line github output to safely set the json array as a github output
+          echo 'release_json<<EOF' >> $GITHUB_OUTPUT
+          echo "$release_json" >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
+
   release-new-packages:
     name: Release new packages
     runs-on: ubuntu-latest
@@ -114,15 +121,21 @@ jobs:
         id: order-packages
         run: |
           # Order packages to release in the correct chain (shumlib -> mule -> ants)
-          release_json=${{ needs.check-new-releases.outputs.release_json }}
+          release_json='${{ needs.check-new-releases.outputs.release_json }}'
           ordered_json=$(jq -c 'sort_by(.package_name)' <<< "$release_json")
-          echo "ordered_json=$ordered_json" >> $GITHUB_OUTPUT
+          # Use a multi-line github output to safely set the json array as a github output
+          echo 'ordered_json<<EOF' >> $GITHUB_OUTPUT
+          echo "$ordered_json" >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
+
       - name: Release packages
         run: |
           echo "Releasing packages ..."
           options='--field release_json=${{ steps.order-packages.outputs.ordered_json }} --repo ${{ github.repository }}'
           echo "Running '${{ env.RELEASE_WORKFLOW }}' workflow with the following options: '$options'"
           gh workflow run ${{ env.RELEASE_WORKFLOW }} $options
-          # run_url=$(gh run list --workflow ${{ env.RELEASE_WORKFLOW }} --limit 1 --json url | jq '.[0].url')
-          # echo "Release workflow run: $run_url"
-    
+          # We wait for the GitHub database to be updated with the latest triggered run
+          # and then we get the its URL
+          sleep 2 
+          run_url=$(gh run list --workflow ${{ env.RELEASE_WORKFLOW }} --limit 1 --json url --jq '.[0].url' --repo ${{ github.repository }})
+          echo "::notice::Releasing the following packages: ${{ steps.order-packages.outputs.ordered_json }}. Release workflow run: $run_url"

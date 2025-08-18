@@ -37,7 +37,8 @@ jobs:
       - name: Check inputs
         id: check-inputs
         run: |
-          if [ -z '${{ inputs.release_json }}' ]; then
+          if [ -n '${{ inputs.release_json }}' ]; then
+            # If release_json is not empty, then all the other inputs must be empty.
             if (
                 [ -n '${{ inputs.package_name }}' ] \
                 || [ -n '${{ inputs.revision }}' ] \
@@ -47,11 +48,13 @@ jobs:
                 "Either a single 'release_json' input or the three 'package_name', 'revision' and 'version' inputs together must be specified."
               exit 1
             fi
-            echo "package_name='${{ inputs.package_name }}'" >> $GITHUB_OUTPUT
-            echo "revision='${{ inputs.revision }}'" >> $GITHUB_OUTPUT
-            echo "version='${{ inputs.version }}'" >> $GITHUB_OUTPUT
-            echo "release_json='${{ inputs.release_json }}'" >> $GITHUB_OUTPUT
-          elif (
+            # Take the release information from the first object in release_json array
+            package_name=$(jq -r '.[0].package_name' <<< '${{ inputs.release_json }}')
+            revision=$(jq -r '.[0].revision' <<< '${{ inputs.release_json }}')
+            version=$(jq -r '.[0].version' <<< '${{ inputs.release_json }}')
+            # Remove the first object from the release_json array
+            release_json=$(jq -c '.[1:]' <<< '${{ inputs.release_json }}')
+          elif ( # If release_json is empty, then all the other inputs must be non-empty.
                 [ -z '${{ inputs.package_name }}' ] \
                 || [ -z '${{ inputs.revision }}' ] \
                 || [ -z '${{ inputs.version }}' ] \
@@ -59,14 +62,22 @@ jobs:
             echo "::error:: Not enough input arguments specified. Either a single 'release_json' input or the three 'package_name', 'revision' and 'version' inputs together must be specified."
             exit 1
           else
-            # Take the release information from the first object in release_json array
-            echo "package_name=$(jq '.[0].package_name' <<< '${{ inputs.release_json }}')" >> $GITHUB_OUTPUT
-            echo "revision=$(jq '.[0].revision' <<< '${{ inputs.release_json }}')" >> $GITHUB_OUTPUT
-            echo "version=$(jq '.[0].version' <<< '${{ inputs.release_json }}')" >> $GITHUB_OUTPUT
-            # Remove the first object from the release_json array
-            echo "release_json=$(jq -c '.[1:]' <<< '${{ inputs.release_json }}')" >> $GITHUB_OUTPUT
+            package_name='${{ inputs.package_name }}'
+            revision='${{ inputs.revision }}'
+            version='${{ inputs.version }}'
+            release_json='${{ inputs.release_json }}'
           fi
-
+          echo "package_name=$package_name" >> $GITHUB_OUTPUT
+          echo "revision=$revision" >> $GITHUB_OUTPUT
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "release_json=$release_json" >> $GITHUB_OUTPUT
+          echo "::notice::Package to be released in this workflow: ${package_name}-${version}"
+          if [ -n "$release_json" ]; then
+            echo "::notice::Packages queued for release: $release_json"
+          else
+            echo "::notice::No other packages queued for release."
+          fi
+            
   set-tag-name:
     name: Set tag name and release name
     runs-on: ubuntu-latest
@@ -125,6 +136,9 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Create tag
         id: create-tag
         run: |
