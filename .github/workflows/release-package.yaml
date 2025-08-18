@@ -111,7 +111,7 @@ jobs:
 
       - name: Build and upload conda package
         id: conda-build
-        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v3
+        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v3.0.0
         with:
           meta_yaml_dir: packages/${{ needs.inputs-sanity-check.outputs.package_name }}/recipe
           user: ${{ secrets.ANACONDA_USERNAME }}
