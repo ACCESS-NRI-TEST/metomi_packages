@@ -43,7 +43,7 @@ test:
     # Enable ugants to find the proper test resources
     - ln -vs ${SRC_DIR}/lib/ugants/tests/resources ${SP_DIR}/ugants/tests/resources
     # Test ugants
-    - $PYTHON -m pytest ${SP_DIR}/ugants/tests --override-ini addopts="" --override-ini filterwarnings=""
+    - $PYTHON -m pytest ${SP_DIR}/ugants/tests -W default
 
 about:
   home: https://code.metoffice.gov.uk/doc/ancil/ug-ants/latest/contributing.html
