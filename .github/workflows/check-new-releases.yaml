@@ -11,6 +11,7 @@ on:
   # Run the 15th of each month at 2:30am UK (MOSRS) time
 env:
   RELEASE_WORKFLOW: release-package.yaml
+  RELEASE_ORDER: '["shumlib", "mule", "ants"]'
   SVN_REALM: '<https://code.metoffice.gov.uk:443> Met Office Code'
 
 jobs:
@@ -120,9 +121,13 @@ jobs:
       - name: Order packages
         id: order-packages
         run: |
-          # Order packages to release in the correct chain (shumlib -> mule -> ants)
+          # Order packages to release in the correct order (shumlib -> mule -> ants)
           release_json='${{ needs.check-new-releases.outputs.release_json }}'
-          ordered_json=$(jq -c 'sort_by(.package_name)' <<< "$release_json")
+          ordered_json=$(
+            jq -c 'def custom_order: ${{ env.RELEASE_ORDER }}; 
+            sort_by(.package_name as $pkg | (custom_order | index($pkg)) // (custom_order | length))
+            ' <<< "$release_json"
+          )
           # Use a multi-line github output to safely set the json array as a github output
           echo 'ordered_json<<EOF' >> $GITHUB_OUTPUT
           echo "$ordered_json" >> $GITHUB_OUTPUT
