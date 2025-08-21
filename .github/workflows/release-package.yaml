@@ -153,6 +153,8 @@ jobs:
     if: ${{ needs.inputs-sanity-check.outputs.release_json != '' && needs.inputs-sanity-check.outputs.release_json != '[]' }}
     env:
       GH_TOKEN: ${{github.token}}
+    permissions:
+      actions: write
     steps:
       - name: Release packages
         run: |
