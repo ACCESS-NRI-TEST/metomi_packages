@@ -189,3 +189,5 @@ about:
   license: BSD
   license_family: BSD
   summary: Mule is a Python API for accessing the various file types used by the UM; the UK Met Office's Unified Model.
+  extra:
+    git_hash: {{ GIT_FULL_HASH }}
