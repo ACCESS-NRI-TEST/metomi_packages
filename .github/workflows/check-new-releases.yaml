@@ -1,14 +1,12 @@
 name: Check new releases
 # Check new releases of the packages inside the `packages/` directory from MOSRS.
-# If any package has a new release, it will trigger the `release-package.yaml` workflow.
-# There is a chain of dependency between shumlib, mule and ants. Therefore among these three, any 
-# new ants release should wait for any new mule release, that should wait for any new shumlib release.
+# If any package has a new release, it triggers the `release-package.yaml` workflow.
 
 on:
   workflow_dispatch:
-  # schedule:
-  #     - cron: '30 2 15 * *'
-  # Run the 15th of each month at 2:30am UK (MOSRS) time
+  # Run the 1st of each month at 1:10am UK summer time (12:10am UK winter time)
+  schedule:
+    - cron: '10 0 1 * *'
 env:
   RELEASE_WORKFLOW: release-package.yaml
   RELEASE_ORDER: '["shumlib", "mule", "ants"]'

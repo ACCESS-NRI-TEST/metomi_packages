@@ -72,10 +72,10 @@ jobs:
           echo "version=$version" >> $GITHUB_OUTPUT
           echo "release_json=$release_json" >> $GITHUB_OUTPUT
           echo "::notice::Package to be released in this workflow: ${package_name}-${version}"
-          if [ -n "$release_json" ]; then
-            echo "::notice::Packages queued for release: $release_json"
-          else
+          if [ $release_json == '' ] || [ $release_json == '[]' ]; then
             echo "::notice::No other packages queued for release."
+          else
+            echo "::notice::Packages queued for release: $release_json"
           fi
             
   set-tag-name:
@@ -102,6 +102,7 @@ jobs:
     env:
       REVISION: ${{ needs.inputs-sanity-check.outputs.revision }} # Needed as an env variable for the conda recipe
       VERSION: ${{ needs.inputs-sanity-check.outputs.version }} # Needed as an env variable for the conda recipe
+      GIT_HASH: ${{ github.sha }} # Needed as an env variable for the conda recipe
     permissions:
       contents: write
     steps:

@@ -67,4 +67,4 @@ about:
   license_family: BSD
   summary: ANTS is a versatile Python library for developing ancillary applications.
   extra:
-    git_hash: {{ GIT_FULL_HASH }}
+    git_hash: {{ environ["GIT_HASH"] }}

@@ -26,4 +26,4 @@ about:
   license_file: doc/README.rst
   summary: Unified Model Shared Libraries
   extra:
-    git_hash: {{ GIT_FULL_HASH }}
+    git_hash: {{ environ["GIT_HASH"] }}

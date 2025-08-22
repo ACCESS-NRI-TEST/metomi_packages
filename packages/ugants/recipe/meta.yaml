@@ -51,4 +51,4 @@ about:
   license_family: BSD
   summary: UG-ANTS is a Python library to provide the capabilities to developing ancillary files on unstructured grids.
   extra:
-    git_hash: {{ GIT_FULL_HASH }}
+    git_hash: {{ environ["GIT_HASH"] }}
