@@ -1,6 +1,2 @@
 .vscode/
-test_build/
-test/
-log
-log_*
-env_*
+__pycache__/

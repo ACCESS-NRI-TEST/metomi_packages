@@ -128,7 +128,7 @@ jobs:
           meta_yaml_dir: packages/${{ needs.inputs-sanity-check.outputs.package_name }}/recipe
           user: ${{ secrets.ANACONDA_USERNAME }}
           token: ${{ secrets.ANACONDA_TOKEN }}
-          conda_build_args: -c atteggiani -c accessnri -c conda-forge -c nodefaults
+          conda_build_args: -c accessnri -c conda-forge -c nodefaults
     
       - name: Create tag
         id: create-tag
